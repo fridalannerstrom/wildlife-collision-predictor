@@ -1,4 +1,6 @@
 data/raw_collision_data.csv
 data/cleaned_data.csv
+data/cleaned_with_clusters.csv
 model/model.pkl
 model/model_columns.pkldata/cleaned_with_clusters.csv
+data/original_excels/*
