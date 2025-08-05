@@ -4,13 +4,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 def run():
-    st.title("📊 Exploratory Data Analysis")
+    st.title("Exploratory Data Analysis")
     st.markdown("This section explores the hypotheses using visual analysis.")
 
     # Ladda data
     df = pd.read_csv("data/cleaned_data.csv")
 
-    st.subheader("📌 Hypothesis 1: Wildlife collisions increase during autumn")
+    st.subheader("Hypothesis 1: Wildlife collisions increase during autumn")
 
     # Välj art
     selected_species = st.selectbox("Select species to view monthly collisions:", df["Viltslag"].unique())
