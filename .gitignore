@@ -1,2 +1,4 @@
 data/raw_collision_data.csv
 data/cleaned_data.csv
+model/model.pkl
+model/model_columns.pkl

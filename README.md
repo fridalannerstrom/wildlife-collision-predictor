@@ -166,6 +166,7 @@ We trained a **RandomForestClassifier** with:
 
 ```python
 RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
+
 📈 Results
 Accuracy: TBD
 
