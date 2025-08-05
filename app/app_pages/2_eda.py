@@ -13,10 +13,10 @@ def run():
     st.subheader("Hypothesis 1: Wildlife collisions increase during autumn")
 
     # Välj art
-    selected_species = st.selectbox("Select species to view monthly collisions:", df["Viltslag"].unique())
+    selected_species = st.selectbox("Select species to view monthly collisions:", df["Species"].unique())
 
     # Filtrera
-    df_selected = df[df["Viltslag"] == selected_species]
+    df_selected = df[df["Species"] == selected_species]
     monthly_counts = df_selected["Manad"].value_counts().sort_index()
 
     # Plot
