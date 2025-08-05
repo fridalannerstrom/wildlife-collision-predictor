@@ -1,6 +1,16 @@
-data/raw_collision_data.csv
-data/cleaned_data.csv
+# Rådatafiler
+data/original_excels/
+data/*.xlsx
 data/cleaned_with_clusters.csv
-model/model.pkl
-model/model_columns.pkldata/cleaned_with_clusters.csv
-data/original_excels/*data/cleaned_with_clusters.csv
+
+# Modellfiler
+*.pkl
+*.sav
+
+# Jupyter-kärnor
+.ipynb_checkpoints/
+
+# Streamlit & Python cache
+__pycache__/
+*.py[cod]
+*.DS_Store
