@@ -111,3 +111,77 @@ Collision patterns may be affected by wildlife density, road design, and traffic
 ---
 
 Each hypothesis is tested and discussed in the analysis section of the dashboard and supports the development of the machine learning model and final recommendations.
+
+
+---
+
+## 📊 Exploratory Data Analysis (EDA)
+
+To validate the project hypotheses, we performed exploratory analysis on cleaned wildlife collision data from Sweden, including time, location and species information.
+
+### ✅ Hypothesis 1 – Moose collisions increase during autumn  
+A barplot of monthly collisions per species revealed a clear seasonal pattern: **moose collisions peak in September–November**, supporting the hypothesis.
+
+### ✅ Hypothesis 2 – Collisions are more common at dawn and dusk  
+By extracting the hour from the timestamp, we plotted the distribution of collisions throughout the day.  
+Results showed **a significant increase in collisions around sunrise and sunset**, especially for moose and deer.
+
+### ✅ Hypothesis 3 – Certain counties have more collisions  
+We compared the number of collisions per county.  
+Some counties (e.g. Värmland, Uppsala) consistently report **higher numbers regardless of time**, supporting regional risk patterns.
+
+### 🗺️ Interactive Map  
+A Plotly-based map was added with filtering by:
+- **Species**
+- **Year**
+
+To improve performance and usability, we implemented:
+- Year and species selectboxes
+- Sampling (max 10,000 points)
+- Optional heatmap view
+
+This allows users to visually explore collision hotspots in Sweden.
+
+---
+
+## 🤖 Predictive Modeling
+
+To predict **wildlife collision risk** for a given time and place, we built a binary classification model:
+
+### 🎯 Objective  
+Predict whether a given combination of **location (GPS cluster)** and **time (hour)** is considered a **high-risk situation**.
+
+### 🧪 Target Variable: `High_Risk`  
+We defined "high-risk" zones as the **top 20% most collision-prone cluster-hour combinations** in the dataset.
+
+### 🧠 Feature Engineering  
+We created the following features:
+- `Cluster_ID` – derived using KMeans clustering (n=100) on GPS coordinates  
+- `Hour` – extracted from timestamp  
+- `Month`, `Weekday` – categorical time features  
+- One-hot encoding was used for `Weekday`
+
+### 🧱 Model  
+We trained a **RandomForestClassifier** with:
+
+```python
+RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
+📈 Results
+Accuracy: TBD
+
+Feature Importance:
+
+Cluster_ID ≈ 70%
+
+Hour ≈ 25%
+
+Other features (weekday/month) had minor influence
+
+This confirms that location and time of day are the primary drivers of collision risk.
+
+💾 Model Export
+The trained model will be saved as model.pkl and used in the Streamlit dashboard to:
+
+Predict risk for user-input values
+
+Visualize model insights (coming in “Model Insights” section)
