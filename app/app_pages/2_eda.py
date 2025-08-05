@@ -91,3 +91,44 @@ def run():
     *Interpretation:*  
     This chart shows the regional distribution of wildlife collisions. Some counties consistently report more incidents, possibly due to road density, habitat, or traffic volume.
     """)
+    
+    import plotly.express as px
+
+    st.subheader("🗺️ Interactive Collision Map (Filtered)")
+
+    # Årsval
+    years = sorted(df["Year"].dropna().unique())
+    selected_year = st.selectbox("Select year:", years, index=len(years)-1)
+
+    # Artsval
+    species_options = ["All species"] + sorted(df["Species"].dropna().unique().tolist())
+    selected_species = st.selectbox("Select species:", species_options)
+
+    # Filtrera på år och art
+    df_map = df[df["Year"] == selected_year]
+
+    if selected_species != "All species":
+        df_map = df_map[df_map["Species"] == selected_species]
+
+    # Rensa bort saknade koordinater
+    df_map = df_map.dropna(subset=["Lat_WGS84", "Long_WGS84"])
+
+    # Begränsa till max 10k rader
+    if len(df_map) > 10000:
+        df_map = df_map.sample(10000, random_state=42)
+
+    # Skapa karta
+    fig = px.scatter_mapbox(
+        df_map,
+        lat="Lat_WGS84",
+        lon="Long_WGS84",
+        color="Species",
+        hover_data=["Datum", "Lan", "Kommun"],
+        zoom=4.5,
+        height=600,
+        title=f"Wildlife Collisions in {selected_year} ({selected_species})"
+    )
+
+    fig.update_layout(mapbox_style="open-street-map")
+    fig.update_layout(margin={"r":0,"t":40,"l":0,"b":0})
+    st.plotly_chart(fig)
