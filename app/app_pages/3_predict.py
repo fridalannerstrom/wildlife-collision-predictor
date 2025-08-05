@@ -1,43 +1,73 @@
 import streamlit as st
 import pandas as pd
-import pickle
 import numpy as np
+import pickle
+import plotly.express as px
 
 def run():
+
     st.title("🔮 Wildlife Collision Risk Prediction")
 
-    st.write("Enter time and location details to predict if it's a high-risk situation.")
+    st.write("Click on a location (cluster) on the map below, and select time to predict collision risk.")
 
-    # === Ladda modellen och kolumner ===
+    # === Ladda modellen
     with open("model/model.pkl", "rb") as f:
         model = pickle.load(f)
     with open("model/model_columns.pkl", "rb") as f:
         model_columns = pickle.load(f)
 
-    # === Användarinmatning ===
-    cluster_id = st.number_input("Cluster ID (0–99):", min_value=0, max_value=99, value=0)
+    # === Ladda data med clusterdetaljer
+    @st.cache_data
+    def load_data():
+        df = pd.read_csv("data/cleaned_with_clusters.csv")
+        df = df.dropna(subset=["Lat_WGS84", "Lon_WGS84", "Cluster_ID"])
+        df["Cluster_ID"] = df["Cluster_ID"].astype(int)
+        return df
+
+    df_all = load_data()
+
+    # === Beräkna centroider
+    centroids = df_all.groupby("Cluster_ID")[["Lat_WGS84", "Lon_WGS84"]].mean().reset_index()
+
+    # === Karta där man väljer cluster
+    st.subheader("🗺️ Select a Cluster")
+    selected_cluster = st.selectbox("Or click on a location below:", centroids["Cluster_ID"].sort_values().tolist())
+
+    fig = px.scatter_mapbox(
+        centroids,
+        lat="Lat_WGS84",
+        lon="Lon_WGS84",
+        hover_name="Cluster_ID",
+        color=centroids["Cluster_ID"] == selected_cluster,
+        zoom=4.5,
+        height=500,
+        color_discrete_map={True: "red", False: "gray"}
+    )
+    fig.update_layout(mapbox_style="open-street-map", margin={"r":0,"t":0,"l":0,"b":0})
+    st.plotly_chart(fig, use_container_width=True)
+
+    # === Formulär: tid
+    st.subheader("⏰ Select Time")
     hour = st.slider("Hour of Day (0–23):", 0, 23, 8)
     month = st.slider("Month (1–12):", 1, 12, 10)
     weekday = st.selectbox("Weekday:", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
 
-    # === Skapa input-DataFrame ===
+    # === Förbered input till modell
     input_dict = {
-        "Cluster_ID": cluster_id,
+        "Cluster_ID": selected_cluster,
         "Hour": hour,
         "Month": month,
-        # Weekday kolumner one-hot
-        **{f"Weekday_{day}": int(day == weekday) for day in ["Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}  # Monday excluded
+        **{f"Weekday_{day}": int(day == weekday) for day in ["Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
     }
-
     input_df = pd.DataFrame([input_dict])
 
-    # Lägg till saknade kolumner om någon fattas
+    # Säkerställ alla kolumner finns
     for col in model_columns:
         if col not in input_df.columns:
             input_df[col] = 0
     input_df = input_df[model_columns]
 
-    # === Prediktion ===
+    # === Prediktion
     prediction = model.predict(input_df)[0]
     proba = model.predict_proba(input_df)[0][1]
 
@@ -46,34 +76,18 @@ def run():
     else:
         st.success(f"✅ Low Risk (probability: {proba:.2%})")
 
-    import plotly.express as px
+    # === Visa alla krockar i detta kluster
+    st.subheader("🗺️ Collisions in Selected Cluster")
+    df_cluster = df_all[df_all["Cluster_ID"] == selected_cluster]
 
-    # === Ladda cleaned data med alla punkter ===
-    @st.cache_data
-    def load_cluster_data():
-        df = pd.read_csv("data/cleaned_with_clusters.csv")
-        df = df.dropna(subset=["Lat_WGS84", "Lon_WGS84", "Cluster_ID"])
-        df["Cluster_ID"] = df["Cluster_ID"].astype(int)
-        return df
-
-    df_clusters = load_cluster_data()
-
-    # === Filtrera till valt cluster
-    selected_df = df_clusters[df_clusters["Cluster_ID"] == cluster_id]
-
-    # === Skapa karta med alla krockar i klustret
-    fig = px.scatter_mapbox(
-        selected_df,
+    fig2 = px.scatter_mapbox(
+        df_cluster,
         lat="Lat_WGS84",
         lon="Lon_WGS84",
-        hover_data=["Species", "Time"] if "Species" in selected_df.columns else True,
+        hover_data=["Species", "Time"] if "Species" in df_cluster.columns else True,
         zoom=6,
-        height=500,
-        opacity=0.4
+        opacity=0.4,
+        height=500
     )
-
-    fig.update_layout(mapbox_style="open-street-map")
-    fig.update_layout(margin={"r":0,"t":20,"l":0,"b":0})
-
-    st.markdown("### 🗺️ Collisions in Selected Cluster")
-    st.plotly_chart(fig)
+    fig2.update_layout(mapbox_style="open-street-map", margin={"r":0,"t":20,"l":0,"b":0})
+    st.plotly_chart(fig2)
