@@ -142,123 +142,6 @@ To improve performance and usability, we implemented:
 
 This allows users to visually explore collision hotspots in Sweden.
 
----
-
-## 🤖 Predictive Modeling
-
-To predict **wildlife collision risk** for a given time and place, we built a binary classification model:
-
-### 🎯 Objective  
-Predict whether a given combination of **location (GPS cluster)** and **time (hour)** is considered a **high-risk situation**.
-
-### 🧪 Target Variable: `High_Risk`  
-We defined "high-risk" zones as the **top 20% most collision-prone cluster-hour combinations** in the dataset.
-
-### 🧠 Feature Engineering  
-We created the following features:
-- `Cluster_ID` – derived using KMeans clustering (n=100) on GPS coordinates  
-- `Hour` – extracted from timestamp  
-- `Month`, `Weekday` – categorical time features  
-- One-hot encoding was used for `Weekday`
-
-### 🧱 Model  
-We trained a **RandomForestClassifier** with:
-
-```python
-RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
-```
-### 📈 Results
-Accuracy: TBD
-
-Feature Importance:
-
-Cluster_ID ≈ 70%
-
-Hour ≈ 25%
-
-Other features (weekday/month) had minor influence
-
-This confirms that location and time of day are the primary drivers of collision risk.
-
-### 💾 Model Export
-The trained model will be saved as model.pkl and used in the Streamlit dashboard to:
-
-Predict risk for user-input values
-
-Visualize model insights (coming in “Model Insights” section);
-
----
-
-## 🧠 Model Training and Prediction
-
-After performing EDA and clustering GPS coordinates into 100 regional clusters using KMeans, we proceeded to build a classification model to **predict high-risk wildlife collision scenarios**.
-
-### 🎯 Problem Definition
-
-We defined "High Risk" as the top 20% of cluster+hour combinations with the highest collision frequency. Each data point was labeled as `High_Risk = 1` or `0` accordingly.  
-
-The goal was to train a model that predicts whether a specific time/location combination (based on cluster, hour, weekday, month) represents a high-risk situation.
-
-### 🧪 Features Used
-
-The final features selected based on feature importance were:
-
-- `Cluster_ID` (clustered GPS region)
-- `Hour` (of day)
-- `Month`
-- `Weekday` (converted to one-hot encoding)
-
-### ⚙️ Model Pipeline
-
-We used a Random Forest Classifier from `scikit-learn`:
-
-- Train/test split: 80/20
-- Model evaluation metrics: Accuracy, Precision, Recall, F1 Score
-- Feature importance was plotted and guided feature selection
-
-```python
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-
-# Features and target
-X = df[["Cluster_ID", "Hour", "Month", "Weekday_Monday", ...]]
-y = df["High_Risk"]
-
-# Train/test split
-X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
-
-# Model
-model = RandomForestClassifier(random_state=42)
-model.fit(X_train, y_train)
-```
-
----
-
-## 🧪 Interactive Prediction (Streamlit)
-
-In the **"Predict"** page of the Streamlit app, users can now interactively:
-
-1. Choose a location (by selecting cluster or clicking on a map)
-2. Choose time parameters (hour, month, weekday)
-3. View the predicted risk level (with probability)
-4. View the cluster region on an interactive map (with highlighted region)
-5. View historical collisions from that cluster
-
-This allows stakeholders (like traffic planners or drivers) to simulate upcoming routes and times and get a real-time estimate of collision risk.
-
----
-
-## 🗺️ New Map Feature
-
-We replaced the confusing “Cluster ID” dropdown with an **interactive map**, where the user can:
-
-- Click on a cluster point to select it
-- Immediately see predicted risk
-- Visually understand where that cluster lies
-
-We use `plotly.express.scatter_mapbox` to show cluster centroids and historical collisions for the selected region.
-
----
 
 ## 🗂️ GitHub Cleanup: Data Exclusion
 
@@ -292,16 +175,124 @@ data/cleaned_with_clusters.csv
 
 ---
 
-## ✅ Summary of What We Achieved
+# 🦌 Wildlife Collision Predictor
 
-- ✅ Cleaned and merged 10 years of real collision data
-- ✅ Translated all variables to English
-- ✅ Clustered GPS coordinates using KMeans
-- ✅ Engineered time-based features
-- ✅ Defined high-risk collisions and trained model
-- ✅ Built full Streamlit app with:
-  - Interactive EDA
-  - Species insights
-  - Risk prediction based on location + time
-  - Map with visual cluster selection
-- ✅ Cleaned Git history and maintained a shareable GitHub repo
+## 📅 Work Log – August 8, 2025
+
+### 1. Problem: Large files when pushing to GitHub
+- When attempting to push the project to GitHub, we encountered:
+  ```
+  remote: error: File data/cleaned_data.csv is 131.02 MB; this exceeds GitHub's file size limit of 100.00 MB
+  remote: error: File data/raw_collision_data.csv is 163.98 MB; this exceeds GitHub's file size limit of 100.00 MB
+  ```
+- GitHub has a **100 MB limit** for files in regular commits.
+- **Solution**:
+  1. Installed `git-filter-repo` to remove large files from commit history.
+  2. Ran:
+     ```bash
+     git filter-repo --path data/ --invert-paths
+     ```
+     which removed the entire `data/` folder from Git history.
+  3. Reconnected the remote repository:
+     ```bash
+     git remote add origin https://github.com/<user>/<repo>.git
+     ```
+  4. Force-pushed the cleaned history:
+     ```bash
+     git push origin main --force
+     ```
+  5. Added `data/` to `.gitignore` to prevent these files from being pushed again.
+
+---
+
+### 2. Problem: Data files missing on Heroku
+- Since the CSV files were excluded from GitHub, they were not present in the Heroku deployment.
+- Options discussed:
+  - Upload CSV to external storage (e.g., Amazon S3, Google Cloud Storage) and download them at runtime.
+  - Include a smaller demo dataset in the repo.
+- **Current decision**: Use local files during development and plan for migration to external storage later.
+
+---
+
+### 3. Problem: Encoding error (`UnicodeDecodeError`) when reading CSV
+- On Heroku, we encountered:
+  ```
+  UnicodeDecodeError: 'utf-8' codec can't decode byte 0x8b in position 1
+  ```
+- **Cause**: The CSV files were not saved in UTF-8 but likely in `ISO-8859-1` / `latin1`.
+- **Solution**:
+  - Updated `pd.read_csv()` calls to:
+    ```python
+    pd.read_csv("data/cleaned_data.csv", encoding="latin1")
+    ```
+  - Plan: Create a helper function for consistent CSV reading.
+
+---
+
+### 4. Improvements in the Predict page
+- Rebuilt prediction logic so that the user can:
+  1. Select **County**
+  2. Select **Municipality** – filtered based on the chosen county.
+  3. Select **time** (e.g., month, hour) and species.
+- Next step: Implement **cascading dropdowns** where the county choice automatically filters the available municipalities.
+
+---
+
+### 5. GitHub & Branch settings
+- Resolved the error:
+  ```
+  fatal: The current branch main has no upstream branch.
+  ```
+- Set up remote tracking:
+  ```bash
+  git push --set-upstream origin main
+  ```
+
+---
+
+## ⚙️ Technical description of the Predict function
+
+The Predict page uses a **pre-trained model** (`model.pkl`) together with metadata (`model_columns.pkl`) to predict wildlife collision risk based on the user's input.
+
+**Process steps:**
+1. **Load data for dropdowns**
+   - The `cleaned_data.csv` file is read to get unique values for `County`, `Municipality`, `Month`, `Hour`, and `Species`.
+   - The user selects from these using Streamlit dropdowns.
+
+2. **Cascading dropdowns**
+   - When a county is selected, the municipality list is dynamically filtered to only show those within that county.
+   - This is done using a Pandas filter operation:
+     ```python
+     municipalities = df[df['County'] == selected_county]['Municipality'].unique()
+     ```
+
+3. **Prepare input for the model**
+   - The user’s choices are collected in a dictionary, e.g.:
+     ```python
+     user_input = {
+         "County": selected_county,
+         "Municipality": selected_municipality,
+         "Month": selected_month,
+         "Hour": selected_hour,
+         "Species": selected_species
+     }
+     ```
+   - Converted to a Pandas DataFrame and encoded using the format the model was trained with (`model_columns.pkl`).
+
+4. **Prediction**
+   - The model (`model.pkl`) is loaded with `joblib`.
+   - The user's input is passed to the model:
+     ```python
+     prediction = model.predict_proba(user_df)[:, 1]  # Probability of collision
+     ```
+   - The result is a probability (0–1) which can be displayed as a percentage or risk category.
+
+5. **Visual presentation**
+   - The risk level is displayed in Streamlit, e.g., as a colored indicator (green, yellow, red) or percentage.
+
+---
+
+## 🎯 Next steps
+1. Fully implement the County → Municipality cascading dropdowns.
+2. Create a helper function for consistent CSV reading with `encoding="latin1"`.
+3. Move large CSV files to external storage (S3 or similar) for Heroku deployment.
