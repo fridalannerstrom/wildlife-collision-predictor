@@ -22,7 +22,7 @@ def run():
         df_selected = df[df["Species"] == selected_species]
         title_species = selected_species
 
-    monthly_counts = df_selected["Manad"].value_counts().sort_index()
+    monthly_counts = df_selected["Month"].value_counts().sort_index()
 
     fig, ax = plt.subplots(figsize=(10, 5))
     sns.barplot(x=monthly_counts.index, y=monthly_counts.values, ax=ax)
@@ -40,7 +40,7 @@ def run():
     st.subheader("Hypothesis 2: Collisions are more common at dawn and dusk")
 
     # Konvertera tid till timme
-    df["Hour"] = pd.to_datetime(df["Tid"], errors="coerce").dt.hour
+    df["Hour"] = pd.to_datetime(df["Time"], errors="coerce").dt.hour
 
     species_options_2 = ["All species"] + sorted(df["Species"].dropna().unique().tolist())
     species_for_time = st.selectbox("Select species to view hourly collisions:", species_options_2)
@@ -78,7 +78,7 @@ def run():
         df_selected_3 = df[df["Species"] == selected_species_3]
         title_species = selected_species_3
 
-    county_counts = df_selected_3["Lan"].value_counts().sort_values(ascending=False)
+    county_counts = df_selected_3["County"].value_counts().sort_values(ascending=False)
 
     fig3, ax3 = plt.subplots(figsize=(10, 8))
     sns.barplot(y=county_counts.index, x=county_counts.values, ax=ax3)
@@ -123,7 +123,7 @@ def run():
         lat="Lat_WGS84",
         lon="Long_WGS84",
         color="Species",
-        hover_data=["Datum", "Lan", "Kommun"],
+        hover_data=["Date", "County", "Municipality"],
         zoom=4.5,
         height=600,
         title=f"Wildlife Collisions in {selected_year} ({selected_species})"

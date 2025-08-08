@@ -166,8 +166,8 @@ We trained a **RandomForestClassifier** with:
 
 ```python
 RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
-
-📈 Results
+```
+### 📈 Results
 Accuracy: TBD
 
 Feature Importance:
@@ -180,9 +180,128 @@ Other features (weekday/month) had minor influence
 
 This confirms that location and time of day are the primary drivers of collision risk.
 
-💾 Model Export
+### 💾 Model Export
 The trained model will be saved as model.pkl and used in the Streamlit dashboard to:
 
 Predict risk for user-input values
 
-Visualize model insights (coming in “Model Insights” section)
+Visualize model insights (coming in “Model Insights” section);
+
+---
+
+## 🧠 Model Training and Prediction
+
+After performing EDA and clustering GPS coordinates into 100 regional clusters using KMeans, we proceeded to build a classification model to **predict high-risk wildlife collision scenarios**.
+
+### 🎯 Problem Definition
+
+We defined "High Risk" as the top 20% of cluster+hour combinations with the highest collision frequency. Each data point was labeled as `High_Risk = 1` or `0` accordingly.  
+
+The goal was to train a model that predicts whether a specific time/location combination (based on cluster, hour, weekday, month) represents a high-risk situation.
+
+### 🧪 Features Used
+
+The final features selected based on feature importance were:
+
+- `Cluster_ID` (clustered GPS region)
+- `Hour` (of day)
+- `Month`
+- `Weekday` (converted to one-hot encoding)
+
+### ⚙️ Model Pipeline
+
+We used a Random Forest Classifier from `scikit-learn`:
+
+- Train/test split: 80/20
+- Model evaluation metrics: Accuracy, Precision, Recall, F1 Score
+- Feature importance was plotted and guided feature selection
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+
+# Features and target
+X = df[["Cluster_ID", "Hour", "Month", "Weekday_Monday", ...]]
+y = df["High_Risk"]
+
+# Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
+
+# Model
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train, y_train)
+```
+
+---
+
+## 🧪 Interactive Prediction (Streamlit)
+
+In the **"Predict"** page of the Streamlit app, users can now interactively:
+
+1. Choose a location (by selecting cluster or clicking on a map)
+2. Choose time parameters (hour, month, weekday)
+3. View the predicted risk level (with probability)
+4. View the cluster region on an interactive map (with highlighted region)
+5. View historical collisions from that cluster
+
+This allows stakeholders (like traffic planners or drivers) to simulate upcoming routes and times and get a real-time estimate of collision risk.
+
+---
+
+## 🗺️ New Map Feature
+
+We replaced the confusing “Cluster ID” dropdown with an **interactive map**, where the user can:
+
+- Click on a cluster point to select it
+- Immediately see predicted risk
+- Visually understand where that cluster lies
+
+We use `plotly.express.scatter_mapbox` to show cluster centroids and historical collisions for the selected region.
+
+---
+
+## 🗂️ GitHub Cleanup: Data Exclusion
+
+To ensure a clean and professional GitHub repository, we **removed all large and sensitive files** from version control. This includes:
+
+- `data/original_excels/` – Raw downloaded Excel files
+- `data/cleaned_with_clusters.csv` – Too large for GitHub (over 100 MB)
+- Model artifacts like `.pkl` files (if any)
+
+### ❌ Why?
+
+- GitHub has a strict 100 MB file limit
+- Sensitive data or raw sources should not be public
+- Encourages reproducibility through clear code + instructions
+
+### ✅ How?
+
+- We used `git filter-repo` to permanently remove large files from Git history
+- Added these paths to `.gitignore` to prevent accidental re-upload:
+
+```gitignore
+# Ignore raw data and large CSVs
+data/original_excels/
+data/*.xlsx
+data/cleaned_with_clusters.csv
+
+# Ignore model files
+*.pkl
+*.sav
+```
+
+---
+
+## ✅ Summary of What We Achieved
+
+- ✅ Cleaned and merged 10 years of real collision data
+- ✅ Translated all variables to English
+- ✅ Clustered GPS coordinates using KMeans
+- ✅ Engineered time-based features
+- ✅ Defined high-risk collisions and trained model
+- ✅ Built full Streamlit app with:
+  - Interactive EDA
+  - Species insights
+  - Risk prediction based on location + time
+  - Map with visual cluster selection
+- ✅ Cleaned Git history and maintained a shareable GitHub repo
