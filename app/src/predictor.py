@@ -45,7 +45,7 @@ def load_unique_values():
     """
     global _unique_values_cache
     if _unique_values_cache is None:
-        df = pd.read_csv(CLEAN_DATA_PATH, compression="infer") 
+        df = pd.read_csv(CLEAN_DATA_PATH, encoding="latin1")
 
         required = ["Weekday", "County", "Municipality", "Species"]
         missing = [c for c in required if c not in df.columns]

@@ -9,7 +9,7 @@ def run():
     st.markdown("This section explores the hypotheses using visual analysis.")
 
     # Ladda data
-    df = pd.read_csv("data/cleaned_data.csv")
+    df = pd.read_csv("data/cleaned_data.csv", encoding="latin1")
 
     st.subheader("Hypothesis 1: Wildlife collisions increase during autumn")
 
