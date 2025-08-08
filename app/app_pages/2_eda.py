@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+
 def run():
     st.title("Exploratory Data Analysis")
     st.markdown("This section explores the hypotheses using visual analysis.")

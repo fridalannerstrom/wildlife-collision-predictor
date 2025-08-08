@@ -2,6 +2,7 @@
 data/original_excels/
 data/*.xlsx
 data/cleaned_with_clusters.csv
+data/*.csv
 
 # Modellfiler
 *.pkl
