@@ -8,7 +8,9 @@ import pandas as pd
 # ---- Sökvägar anpassade till din struktur ----
 MODEL_PATH = os.path.join("model", "model.pkl")
 COLUMNS_PATH = os.path.join("model", "model_columns.pkl")
-CLEAN_DATA_PATH = os.path.join("data", "cleaned_data.csv")
+from src.data_access import ensure_local_clean_data
+CLEAN_DATA_PATH = ensure_local_clean_data()
+
 
 _model = None
 _model_cols = None
@@ -43,7 +45,7 @@ def load_unique_values():
     """
     global _unique_values_cache
     if _unique_values_cache is None:
-        df = pd.read_csv(CLEAN_DATA_PATH)
+        df = pd.read_csv(CLEAN_DATA_PATH, compression="infer") 
 
         required = ["Weekday", "County", "Municipality", "Species"]
         missing = [c for c in required if c not in df.columns]
