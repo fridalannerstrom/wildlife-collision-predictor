@@ -1,93 +1,86 @@
+# app_pages/3_predict.py
 import streamlit as st
 import pandas as pd
-import numpy as np
-import pickle
-import plotly.express as px
+from datetime import datetime
+from src.predictor import (
+    load_unique_values,
+    get_municipalities_for_county,
+    build_feature_row,
+    predict_proba_label,
+)
 
 def run():
-
     st.title("🔮 Wildlife Collision Risk Prediction")
+    st.write("Välj län och kommun (kaskad), tid och art – modellen ger risknivå.")
 
-    st.write("Click on a location (cluster) on the map below, and select time to predict collision risk.")
+    uv = load_unique_values()
+    counties = uv["counties"]
+    species_list = uv["species"]
+    weekday_opts = uv["weekdays"]
 
-    # === Ladda modellen
-    with open("model/model.pkl", "rb") as f:
-        model = pickle.load(f)
-    with open("model/model_columns.pkl", "rb") as f:
-        model_columns = pickle.load(f)
+    colL, colR = st.columns(2)
+    with colL:
+        # 1) County
+        default_county = "Värmlands län" if "Värmlands län" in counties else counties[0]
+        county = st.selectbox("County", counties, index=counties.index(default_county))
 
-    # === Ladda data med clusterdetaljer
-    @st.cache_data
-    def load_data():
-        df = pd.read_csv("data/cleaned_with_clusters.csv")
-        df = df.dropna(subset=["Lat_WGS84", "Lon_WGS84", "Cluster_ID"])
-        df["Cluster_ID"] = df["Cluster_ID"].astype(int)
-        return df
+        # 2) Municipality, filtrerad på valt county
+        munis = get_municipalities_for_county(county)
+        municipality = st.selectbox("Municipality", munis, index=0 if munis else None)
 
-    df_all = load_data()
+        species = st.selectbox(
+            "Species",
+            ["All species"] + [s for s in species_list if s != "All species"],
+        )
+    with colR:
+        now = datetime.now()
+        month = st.slider("Month", 1, 12, now.month)
+        hour = st.slider("Hour of day", 0, 23, now.hour)
+        default_wd = now.strftime("%A")
+        wd_index = weekday_opts.index(default_wd) if default_wd in weekday_opts else 0
+        weekday = st.selectbox("Weekday", weekday_opts, index=wd_index)
 
-    # === Beräkna centroider
-    centroids = df_all.groupby("Cluster_ID")[["Lat_WGS84", "Lon_WGS84"]].mean().reset_index()
+    with st.expander("Optional: coordinates (for future map-click wiring)"):
+        lat = st.number_input("Lat_WGS84", value=0.0, format="%.6f")
+        lon = st.number_input("Long_WGS84", value=0.0, format="%.6f")
+        doy = st.number_input("Day_of_Year", min_value=1, max_value=366, value=now.timetuple().tm_yday)
 
-    # === Karta där man väljer cluster
-    st.subheader("🗺️ Select a Cluster")
-    selected_cluster = st.selectbox("Or click on a location below:", centroids["Cluster_ID"].sort_values().tolist())
+    if st.button("Predict risk"):
+        with st.spinner("Predicting..."):
+            X = build_feature_row(
+                year=now.year,
+                month=month,
+                hour=hour,
+                weekday=weekday,
+                county=county,
+                species=species,
+                municipality=municipality,           # <--- skicka in
+                lat_wgs84=(lat if lat != 0.0 else None),
+                long_wgs84=(lon if lon != 0.0 else None),
+                day_of_year=doy,
+            )
+            score, label, proba = predict_proba_label(X)
 
-    fig = px.scatter_mapbox(
-        centroids,
-        lat="Lat_WGS84",
-        lon="Lon_WGS84",
-        hover_name="Cluster_ID",
-        color=centroids["Cluster_ID"] == selected_cluster,
-        zoom=4.5,
-        height=500,
-        color_discrete_map={True: "red", False: "gray"}
-    )
-    fig.update_layout(mapbox_style="open-street-map", margin={"r":0,"t":0,"l":0,"b":0})
-    st.plotly_chart(fig, use_container_width=True)
+        st.subheader("Result")
+        if isinstance(score, float):
+            st.metric("Risk level", label, delta=f"score: {score:.2f}")
+        else:
+            st.metric("Predicted class", label)
 
-    # === Formulär: tid
-    st.subheader("⏰ Select Time")
-    hour = st.slider("Hour of Day (0–23):", 0, 23, 8)
-    month = st.slider("Month (1–12):", 1, 12, 10)
-    weekday = st.selectbox("Weekday:", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
+        advice = {
+            "High":   "High risk – sänk hastigheten, öka avståndet och scanna vägrenar aktivt.",
+            "Medium": "Måttlig risk – var extra uppmärksam vid gryning/skymning och i skogspassager.",
+            "Low":    "Låg risk – följ skyltning, håll normal uppmärksamhet.",
+        }
+        st.info(advice.get(label, "Var uppmärksam och följ lokala skyltar."))
 
-    # === Förbered input till modell
-    input_dict = {
-        "Cluster_ID": selected_cluster,
-        "Hour": hour,
-        "Month": month,
-        **{f"Weekday_{day}": int(day == weekday) for day in ["Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
-    }
-    input_df = pd.DataFrame([input_dict])
+        with st.expander("Explain / probabilities"):
+            st.write("Feature vector shape:", X.shape)
+            nonzero = X.iloc[0][X.iloc[0] != 0].sort_values(ascending=False).head(12)
+            st.write(nonzero.to_frame("value"))
+            if proba is not None:
+                st.write("Raw predict_proba:", proba)
 
-    # Säkerställ alla kolumner finns
-    for col in model_columns:
-        if col not in input_df.columns:
-            input_df[col] = 0
-    input_df = input_df[model_columns]
-
-    # === Prediktion
-    prediction = model.predict(input_df)[0]
-    proba = model.predict_proba(input_df)[0][1]
-
-    if prediction == 1:
-        st.error(f"⚠️ High Risk! (probability: {proba:.2%})")
-    else:
-        st.success(f"✅ Low Risk (probability: {proba:.2%})")
-
-    # === Visa alla krockar i detta kluster
-    st.subheader("🗺️ Collisions in Selected Cluster")
-    df_cluster = df_all[df_all["Cluster_ID"] == selected_cluster]
-
-    fig2 = px.scatter_mapbox(
-        df_cluster,
-        lat="Lat_WGS84",
-        lon="Lon_WGS84",
-        hover_data=["Species", "Time"] if "Species" in df_cluster.columns else True,
-        zoom=6,
-        opacity=0.4,
-        height=500
-    )
-    fig2.update_layout(mapbox_style="open-street-map", margin={"r":0,"t":20,"l":0,"b":0})
-    st.plotly_chart(fig2)
+# Valfritt: gör sidan körbar direkt vid behov
+if __name__ == "__main__":
+    run()
