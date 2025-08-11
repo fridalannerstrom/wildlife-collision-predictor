@@ -3,7 +3,7 @@ import pickle
 import joblib
 import numpy as np
 import pandas as pd
-from src.data_loader import load_clean_data  # 🟢 LAGT TILL
+from src.data_loader import load_clean_data
 
 # ---- Sökvägar anpassade till din struktur ----
 MODEL_PATH = os.path.join("model", "model.pkl")

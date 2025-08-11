@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import plotly.graph_objects as go
 from src.predictor import (
     load_unique_values,
     get_municipalities_for_county,
@@ -11,76 +12,83 @@ from src.predictor import (
 
 def run():
     st.title("🔮 Wildlife Collision Risk Prediction")
-    st.write("Välj län och kommun (kaskad), tid och art – modellen ger risknivå.")
+    st.markdown("**Select location and time – get collision risk level and map.**")
 
     uv = load_unique_values()
     counties = uv["counties"]
     species_list = uv["species"]
     weekday_opts = uv["weekdays"]
 
-    colL, colR = st.columns(2)
-    with colL:
-        # 1) County
-        default_county = "Värmlands län" if "Värmlands län" in counties else counties[0]
-        county = st.selectbox("County", counties, index=counties.index(default_county))
+    # --- Step 1: Select Location ---
+    st.subheader("1️⃣ Select Location")
+    county = st.selectbox("County", counties)
+    munis = get_municipalities_for_county(county)
+    municipality = st.selectbox("Municipality", munis)
 
-        # 2) Municipality, filtrerad på valt county
-        munis = get_municipalities_for_county(county)
-        municipality = st.selectbox("Municipality", munis, index=0 if munis else None)
+    # --- Step 2: Select Time & Species ---
+    st.subheader("2️⃣ Select Time & Species")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        month = st.selectbox("Month", list(range(1, 13)), index=datetime.now().month - 1)
+    with col2:
+        hour = st.slider("Hour of Day", 0, 23, datetime.now().hour)
+    with col3:
+        weekday = st.selectbox("Weekday", weekday_opts, index=datetime.now().weekday())
 
-        species = st.selectbox(
-            "Species",
-            ["All species"] + [s for s in species_list if s != "All species"],
-        )
-    with colR:
-        now = datetime.now()
-        month = st.slider("Month", 1, 12, now.month)
-        hour = st.slider("Hour of day", 0, 23, now.hour)
-        default_wd = now.strftime("%A")
-        wd_index = weekday_opts.index(default_wd) if default_wd in weekday_opts else 0
-        weekday = st.selectbox("Weekday", weekday_opts, index=wd_index)
+    species = st.selectbox("Species", ["All species"] + [s for s in species_list if s != "All species"])
 
-    with st.expander("Optional: coordinates (for future map-click wiring)"):
-        lat = st.number_input("Lat_WGS84", value=0.0, format="%.6f")
-        lon = st.number_input("Long_WGS84", value=0.0, format="%.6f")
-        doy = st.number_input("Day_of_Year", min_value=1, max_value=366, value=now.timetuple().tm_yday)
-
-    if st.button("Predict risk"):
+    # --- Prediction ---
+    if st.button("Predict Risk"):
         with st.spinner("Predicting..."):
             X = build_feature_row(
-                year=now.year,
+                year=datetime.now().year,
                 month=month,
                 hour=hour,
                 weekday=weekday,
                 county=county,
                 species=species,
-                municipality=municipality,           # <--- skicka in
-                lat_wgs84=(lat if lat != 0.0 else None),
-                long_wgs84=(lon if lon != 0.0 else None),
-                day_of_year=doy,
+                municipality=municipality,
+                day_of_year=datetime.now().timetuple().tm_yday,
             )
-            score, label, proba = predict_proba_label(X)
+            score, label, _ = predict_proba_label(X)
 
-        st.subheader("Result")
-        if isinstance(score, float):
-            st.metric("Risk level", label, delta=f"score: {score:.2f}")
-        else:
-            st.metric("Predicted class", label)
+        st.subheader("📊 Result")
+        st.metric("Risk Level", label, delta=f"score: {score:.2f}")
 
         advice = {
-            "High":   "High risk – sänk hastigheten, öka avståndet och scanna vägrenar aktivt.",
-            "Medium": "Måttlig risk – var extra uppmärksam vid gryning/skymning och i skogspassager.",
-            "Low":    "Låg risk – följ skyltning, håll normal uppmärksamhet.",
+            "High":   "⚠️ High risk – slow down, increase distance and stay alert near roadsides.",
+            "Medium": "🔶 Moderate risk – be extra careful at dusk/dawn and near forest crossings.",
+            "Low":    "🟢 Low risk – follow signage and drive with normal attention.",
         }
-        st.info(advice.get(label, "Var uppmärksam och följ lokala skyltar."))
+        st.info(advice.get(label, "Stay alert and follow local signage."))
 
-        with st.expander("Explain / probabilities"):
-            st.write("Feature vector shape:", X.shape)
-            nonzero = X.iloc[0][X.iloc[0] != 0].sort_values(ascending=False).head(12)
-            st.write(nonzero.to_frame("value"))
-            if proba is not None:
-                st.write("Raw predict_proba:", proba)
+        # --- Map ---
+        st.subheader("🗺️ Prediction Location on Map")
 
-# Valfritt: gör sidan körbar direkt vid behov
+        # fallback coordinates to center of Sweden for visual reference
+        map_lat, map_lon = 62.0, 15.0
+
+        fig = go.Figure(go.Scattermapbox(
+            lat=[map_lat],
+            lon=[map_lon],
+            mode='markers',
+            marker=go.scattermapbox.Marker(
+                size=18,
+                color='red' if label == "High" else ('orange' if label == "Medium" else 'green')
+            ),
+            text=f"{label} risk<br>Species: {species}<br>Time: {hour}:00<br>Score: {score:.2f}",
+            hoverinfo='text'
+        ))
+
+        fig.update_layout(
+            mapbox_style="open-street-map",
+            mapbox_zoom=6,
+            mapbox_center={"lat": map_lat, "lon": map_lon},
+            margin={"r":0,"t":0,"l":0,"b":0},
+            height=500,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
 if __name__ == "__main__":
     run()
