@@ -433,3 +433,141 @@ pytest tests/
 ```
 
 No special arguments or configuration are needed.
+
+# 📘 Wildlife Collision Predictor
+
+> **Created by Frida, developer & nature enthusiast living in the forests of Värmland, Sweden – where wildlife-vehicle collisions are a real concern.**
+
+---
+
+## 🚀 Overview
+This project is a machine learning-powered **Wildlife Collision Risk Predictor**, built to explore how different factors (location, time, species, etc.) contribute to the risk of wildlife-vehicle collisions.
+
+Using Streamlit for the frontend and a trained ML model for predictions, the app enables users to:
+- Select a **county and municipality** in Sweden
+- Choose a **time, weekday, and animal species**
+- See **predicted collision risk** in 5 categories (from "Very Low" to "Very High")
+- Visualize the result on a dynamic **map of Sweden**
+
+---
+
+## 🧠 Motivation
+Living in the forests of **Värmland, Sweden**, where elk/moose collisions are common, I wanted to create something that:
+- Uses real collision data to uncover patterns
+- Offers **practical insight** to drivers and authorities
+- Demonstrates real-world use of machine learning and data visualisation
+
+---
+
+## 🔍 Features
+- **Cascading location selectors** (county → municipality)
+- **Risk prediction model** with 5 custom thresholds
+- **Species filtering**
+- **Interactive map** (Plotly + Mapbox)
+- **Explanation panel** showing top predictive features
+- **Fully modular structure** with reusable code in `src/`
+
+---
+
+## ✅ Tests
+Automated tests are implemented using `pytest` to ensure core logic works correctly:
+
+### Test Coverage
+- ✔️ `build_feature_row()` – ensures correct number and names of features
+- ✔️ `predict_proba_label()` – verifies output score, label, and probability
+- ✔️ `get_municipalities_for_county()` – checks correct filtering
+- ✔️ `load_clean_data()` – validates structure and content of cleaned dataset
+- ✔️ `read_csv_latin()` – ensures encoding is handled correctly
+
+Run tests using:
+```bash
+pytest tests/
+```
+
+All tests pass ✅
+
+![pytest passed](docs/images/pytest_passed_screenshot.png) <!-- Replace with real path if screenshot added -->
+
+---
+
+## 🛠️ Tech Stack
+- **Frontend/UI**: Streamlit
+- **Backend**: Python, Pandas, Scikit-learn
+- **Data**: Wildlife collision data from Swedish Transport Administration (Trafikverket)
+- **Visualization**: Plotly Mapbox
+- **Testing**: Pytest
+
+---
+
+## ▶️ How to Run the App
+### 1. Clone the repo
+```bash
+git clone https://github.com/yourusername/wildlife-collision-predictor.git
+cd wildlife-collision-predictor
+```
+
+### 2. Set up environment
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Launch the app
+```bash
+streamlit run app.py
+```
+
+### 4. Run tests
+```bash
+pytest tests/
+```
+
+---
+
+## 📦 Folder Structure
+```bash
+├── app.py                  # Entry point (if used)
+├── app_pages/              # Streamlit pages
+│   └── 3_predict.py        # Main prediction UI
+├── src/                    # Core logic
+│   ├── predictor.py
+│   ├── data_loader.py
+│   └── utils.py
+├── tests/                  # Pytest tests
+│   ├── test_predictor.py
+│   ├── test_data_loader.py
+│   ├── test_utils.py
+│   └── test_get_municipalities.py
+├── data/                   # Raw & cleaned data
+├── requirements.txt        # Dependencies
+└── README.md               # Project info
+```
+
+---
+
+## 🎯 Reflections & Learnings
+This project taught me:
+- How to **structure ML projects** for maintainability
+- The importance of **testing even small utility functions**
+- How to integrate **interactive mapping with machine learning**
+- That performance matters – and how to optimize predictions and visuals
+
+I hope this project sparks ideas for using data and AI in public safety, road planning, and wildlife conservation.
+
+---
+
+## 🐾 Future Improvements
+- Add **traffic volume data** for better risk estimation
+- Expand to **other countries or road types**
+- Add **seasonal overlays or real-time warnings**
+- Deploy as **public web app**
+
+---
+
+## 📬 Contact
+If you have ideas, feedback, or just want to talk moose:
+**Frida in Värmland**
+📧 hello@tqai.se
+
+---
+
+> “Drive slow, watch the forest – and maybe one day, this app will help you avoid a moose.” 🦌🚗
