@@ -10,3 +10,4 @@ openpyxl
 jupyter
 streamlit
 requests
+python-dotenv
