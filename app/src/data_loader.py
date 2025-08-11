@@ -1,5 +1,9 @@
 import os
 import pandas as pd
+from dotenv import load_dotenv
+load_dotenv()
+
+print("🔍 CLEAN_DATA_URL:", os.getenv("CLEAN_DATA_URL"))
 
 DEFAULT_LOCAL_PATH = "data/cleaned_data.csv"
 
