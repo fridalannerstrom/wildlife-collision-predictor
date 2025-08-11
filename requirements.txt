@@ -11,3 +11,4 @@ jupyter
 streamlit
 requests
 python-dotenv
+pytest
