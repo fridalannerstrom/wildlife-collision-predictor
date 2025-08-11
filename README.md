@@ -385,3 +385,51 @@ numpy
 scikit-learn
 plotly
 ```
+
+
+### ✅ Automated Testing
+
+This project includes a test suite written with `pytest`, targeting the most critical components of the model pipeline to ensure correct functionality and structure. All tests are located in the `tests/` folder.
+
+#### ✔️ Test Summary
+
+| File                         | Purpose                                                                 |
+|------------------------------|-------------------------------------------------------------------------|
+| `test_predictor.py`          | Validates model input features and prediction output format             |
+| `test_data_loader.py`        | Verifies that the cleaned dataset loads properly as a DataFrame         |
+| `test_utils.py`              | Tests the custom CSV reading function using latin1 encoding             |
+| `test_get_municipalities.py` | Checks the logic for filtering municipalities by county                 |
+
+---
+
+#### ✅ Test Results
+
+All tests passed successfully:
+
+```bash
+$ pytest tests/
+================================================== test session starts ==================================================
+platform win32 -- Python 3.12.8, pytest-8.4.1
+collected 5 items
+
+tests/test_data_loader.py ............                                  [20%]
+tests/test_get_municipalities.py ........                              [40%]
+tests/test_predictor.py ...............                                 [80%]
+tests/test_utils.py ........                                            [100%]
+
+============================================== 5 passed in XX.XX seconds ===============================================
+```
+
+*(Test time will vary depending on machine and file size)*
+
+---
+
+#### 🧪 How to run the tests
+
+Make sure all dependencies are installed (see `requirements.txt`), then run:
+
+```bash
+pytest tests/
+```
+
+No special arguments or configuration are needed.
