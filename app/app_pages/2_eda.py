@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from src.data_loader import load_clean_data
 
 
 def run():
@@ -9,7 +10,7 @@ def run():
     st.markdown("This section explores the hypotheses using visual analysis.")
 
     # Ladda data
-    df = pd.read_csv("data/cleaned_data.csv", encoding="latin1")
+    df = load_clean_data()
 
     st.subheader("Hypothesis 1: Wildlife collisions increase during autumn")
 
