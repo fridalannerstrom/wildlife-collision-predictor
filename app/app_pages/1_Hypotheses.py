@@ -27,5 +27,3 @@ def run():
 
 These hypotheses guide the analysis and prediction strategy in the dashboard.
 """)
-    
-    
