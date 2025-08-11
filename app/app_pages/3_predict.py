@@ -24,21 +24,21 @@ def run():
 
     # --- Step 1: Select Location ---
     st.subheader("1️⃣ Select Location")
-    county = st.selectbox("County", counties)
+    county = st.selectbox("County", counties, help="Choose the county where you plan to travel.")
     munis = get_municipalities_for_county(county)
-    municipality = st.selectbox("Municipality", munis)
+    municipality = st.selectbox("Municipality", munis, help="Select a specific municipality in the county.")
 
     # --- Step 2: Select Time & Species ---
     st.subheader("2️⃣ Select Time & Species")
     col1, col2, col3 = st.columns(3)
     with col1:
-        month = st.selectbox("Month", list(range(1, 13)), index=datetime.now().month - 1)
+        month = st.selectbox("Month", list(range(1, 13)), index=datetime.now().month - 1, help="Choose the month of travel.")
     with col2:
-        hour = st.slider("Hour of Day", 0, 23, datetime.now().hour)
+        hour = st.slider("Hour of Day", 0, 23, datetime.now().hour, help="Choose the approximate hour.")
     with col3:
-        weekday = st.selectbox("Weekday", weekday_opts, index=datetime.now().weekday())
+        weekday = st.selectbox("Weekday", weekday_opts, index=datetime.now().weekday(), help="Pick a day of the week.")
 
-    species = st.selectbox("Species", ["All species"] + [s for s in species_list if s != "All species"])
+    species = st.selectbox("Species", ["All species"] + [s for s in species_list if s != "All species"], help="Optionally filter by specific species.")
 
     # --- Prediction ---
     if st.button("Predict Risk"):
@@ -53,22 +53,35 @@ def run():
                 municipality=municipality,
                 day_of_year=datetime.now().timetuple().tm_yday,
             )
-            score, label, _ = predict_proba_label(X)
+            score, label, proba = predict_proba_label(X)
+
+        # --- Risk levels with 5 categories ---
+        if score >= 0.85:
+            label = "Very High"
+        elif score >= 0.66:
+            label = "High"
+        elif score >= 0.50:
+            label = "Moderate"
+        elif score >= 0.33:
+            label = "Low"
+        else:
+            label = "Very Low"
 
         st.subheader("📊 Result")
         st.metric("Risk Level", label, delta=f"score: {score:.2f}")
 
         advice = {
-            "High":   "⚠️ High risk – slow down, increase distance and stay alert near roadsides.",
-            "Medium": "🔶 Moderate risk – be extra careful at dusk/dawn and near forest crossings.",
-            "Low":    "🟢 Low risk – follow signage and drive with normal attention.",
+            "Very High": "🚨 Very high risk – extreme caution required!",
+            "High":      "⚠️ High risk – slow down, increase distance and stay alert near roadsides.",
+            "Moderate":  "🔶 Moderate risk – be extra careful at dusk/dawn and near forest crossings.",
+            "Low":       "🟢 Low risk – follow signage and drive with normal attention.",
+            "Very Low":  "🟦 Very low risk – low probability of collision in this area/time.",
         }
         st.info(advice.get(label, "Stay alert and follow local signage."))
 
         # --- Map ---
         st.subheader("🗺️ Prediction Location on Map")
 
-        # Try to extract average coordinates for selected municipality
         loc_df = df[(df["County"] == county) & (df["Municipality"] == municipality)].dropna(subset=["Lat_WGS84", "Long_WGS84"])
 
         if not loc_df.empty:
@@ -83,7 +96,13 @@ def run():
             mode='markers',
             marker=go.scattermapbox.Marker(
                 size=18,
-                color='red' if label == "High" else ('orange' if label == "Medium" else 'green')
+                color=(
+                    'darkred' if label == "Very High" else
+                    'red' if label == "High" else
+                    'orange' if label == "Moderate" else
+                    'green' if label == "Low" else
+                    'blue'
+                )
             ),
             text=f"{label} risk<br>Species: {species}<br>Time: {hour}:00<br>Score: {score:.2f}",
             hoverinfo='text'
@@ -98,6 +117,15 @@ def run():
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # --- Explanation section ---
+        with st.expander("📊 View top influential features"):
+            st.write("These are the features that had the highest values in your prediction vector:")
+            nonzero = X.iloc[0][X.iloc[0] != 0].sort_values(ascending=False).head(10)
+            st.write(nonzero.to_frame("value"))
+            if proba is not None:
+                st.markdown("**Prediction probabilities:**")
+                st.write(proba)
 
 
 if __name__ == "__main__":
