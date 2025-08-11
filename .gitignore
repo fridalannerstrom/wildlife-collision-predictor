@@ -5,7 +5,6 @@ data/*.csv
 data/cleaned_with_clusters.csv
 
 # Modellfiler
-*.pkl
 *.sav
 
 # Jupyter-kärnor
