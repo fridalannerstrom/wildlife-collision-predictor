@@ -296,3 +296,92 @@ The Predict page uses a **pre-trained model** (`model.pkl`) together with metada
 1. Fully implement the County → Municipality cascading dropdowns.
 2. Create a helper function for consistent CSV reading with `encoding="latin1"`.
 3. Move large CSV files to external storage (S3 or similar) for Heroku deployment.
+
+## 🔮 Wildlife Collision Risk Prediction – Page Overview
+
+This interactive page allows users to predict wildlife collision risk on Swedish roads based on location, time, and species. It combines user input with a trained machine learning model and visualizes the result with a dynamic risk label and an interactive map.
+
+### ✅ Key Features
+
+- **Cascading dropdowns** for selecting county and municipality.
+- **Flexible time input**: users can specify weekday, hour of day, and month.
+- **Optional species filtering** to refine the prediction.
+- **Model output**: five-tiered risk label (Very Low → Very High).
+- **Color-coded advice box** based on predicted risk.
+- **Interactive map** displaying the prediction location and risk color.
+- **Explainable AI**: expandable section to show top influencing features and raw probabilities.
+
+---
+
+### 🧠 How It Works
+
+1. **User Input:**
+   - The user selects a *County* and *Municipality*.
+   - Time-related inputs include:
+     - **Month**
+     - **Hour of day**
+     - **Weekday**
+   - Optionally, the user can select a specific species (e.g., moose, deer) or use "All species".
+
+2. **Feature Vector Construction:**
+   - Inputs are encoded into a one-hot feature vector that mirrors the training set format.
+   - This includes time, location, species, and derived fields such as *Day of Year*.
+
+3. **Prediction:**
+   - The model returns a probability score (0–1).
+   - Based on the score, a risk label is assigned:
+     ```
+     [0.00–0.33)     = Very Low
+     [0.33–0.50)     = Low
+     [0.50–0.66)     = Moderate
+     [0.66–0.85)     = High
+     [0.85–1.00]     = Very High
+     ```
+
+4. **Result Display:**
+   - A `st.metric()` widget displays the label and score.
+   - A color-coded `st.info()` box offers risk-specific advice (e.g., slow down, increase attention).
+   - The map centers on the **average coordinates** of the selected municipality, with a marker color-matched to the risk label.
+
+5. **Explainability:**
+   - The user can expand a section showing:
+     - The top 10 non-zero features influencing the prediction.
+     - The raw probability output from the classifier (e.g., `[0.25, 0.75]` for binary classifiers).
+
+---
+
+### 🌍 Map Visualization
+
+The map uses Plotly’s `Scattermapbox` with the following design:
+
+- **Zoom level**: 7 (regional).
+- **Map tiles**: OpenStreetMap (no API key needed).
+- **Marker**: colored dot centered on average GPS coordinates from real historical collisions in that municipality.
+- **Colors**:
+  - 🔵 `Very Low`
+  - 🟢 `Low`
+  - 🟠 `Moderate`
+  - 🔴 `High`
+  - 🟥 `Very High`
+
+---
+
+### 🧪 Model Integration Notes
+
+- This module uses the global `model.pkl` and `model_columns.pkl` files located in the `/model/` directory.
+- Cleaned data (`cleaned_data.csv`) must include columns: `County`, `Municipality`, `Weekday`, `Species`, `Lat_WGS84`, `Long_WGS84`.
+- It depends on the functions in `src/predictor.py` and `src/data_loader.py`.
+
+---
+
+### 📌 Dependencies
+
+Ensure your project has the following installed (in `requirements.txt`):
+
+```txt
+streamlit
+pandas
+numpy
+scikit-learn
+plotly
+```
