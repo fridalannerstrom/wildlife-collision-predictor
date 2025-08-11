@@ -9,11 +9,14 @@ from src.predictor import (
     build_feature_row,
     predict_proba_label,
 )
+from src.data_loader import load_clean_data
+
 
 def run():
     st.title("🔮 Wildlife Collision Risk Prediction")
     st.markdown("**Select location and time – get collision risk level and map.**")
 
+    df = load_clean_data()
     uv = load_unique_values()
     counties = uv["counties"]
     species_list = uv["species"]
@@ -65,8 +68,14 @@ def run():
         # --- Map ---
         st.subheader("🗺️ Prediction Location on Map")
 
-        # fallback coordinates to center of Sweden for visual reference
-        map_lat, map_lon = 62.0, 15.0
+        # Try to extract average coordinates for selected municipality
+        loc_df = df[(df["County"] == county) & (df["Municipality"] == municipality)].dropna(subset=["Lat_WGS84", "Long_WGS84"])
+
+        if not loc_df.empty:
+            map_lat = loc_df["Lat_WGS84"].mean()
+            map_lon = loc_df["Long_WGS84"].mean()
+        else:
+            map_lat, map_lon = 62.0, 15.0  # fallback
 
         fig = go.Figure(go.Scattermapbox(
             lat=[map_lat],
@@ -82,13 +91,14 @@ def run():
 
         fig.update_layout(
             mapbox_style="open-street-map",
-            mapbox_zoom=6,
+            mapbox_zoom=7,
             mapbox_center={"lat": map_lat, "lon": map_lon},
             margin={"r":0,"t":0,"l":0,"b":0},
             height=500,
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
 
 if __name__ == "__main__":
     run()
