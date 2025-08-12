@@ -608,3 +608,34 @@ The raw collision data was initially spread across multiple Excel files with var
 
 6. **Export**  
    The cleaned dataset was saved as `cleaned_data.csv` in the `/data/` directory, containing over **635,000 entries** and ready for use in modeling and visualization tasks.
+
+## 📊 Baseline Risk Model
+
+This section explains how we calculate a baseline collision risk score for each combination of:
+- County
+- Species (including fallback: "All species")
+- Month
+- Hour of day
+
+### 🔄 Process overview
+
+1. **Input data:** `cleaned_data.csv`
+2. **Clean and prepare:**
+   - Standardized column names
+   - Filled missing counties with municipality
+   - Removed trailing `" län"` from county names
+   - Extracted `month` and `hour` from combined `date` + `time`
+3. **Filtered rows** with missing or empty values in `county`, `species`, `month`, or `hour`.
+4. **Grouped** by (`county`, `species`, `month`, `hour`) and counted number of collisions.
+5. **Normalized** the number of collisions per (`county`, `species`) group using min-max normalization to get a `risk_score` between `0.0000` and `1.0000`.
+6. **Added fallback rows** where species is `"All species"` (ignoring specific species).
+7. **Exported results** to:  
+   `data/processed/baseline_risk.csv`  
+   (with 4 decimal places using `float_format="%.4f"`)
+
+### 📁 Output format
+
+| county  | species     | month | hour | n_collisions | risk_score |
+|---------|-------------|-------|------|--------------|------------|
+| Blekinge | Fallow Deer | 1     | 6    | 5            | 0.1600     |
+| ...     | ...         | ...   | ...  | ...          | ...        |
