@@ -571,3 +571,40 @@ If you have ideas, feedback, or just want to talk moose:
 ---
 
 > “Drive slow, watch the forest – and maybe one day, this app will help you avoid a moose.” 🦌🚗
+
+
+## Data Cleaning
+
+The raw collision data was initially spread across multiple Excel files with varying structures and unnecessary columns. To ensure consistency and improve usability, the data was cleaned through a comprehensive multi-step process:
+
+1. **Merging Excel Files**  
+   All Excel files located in the `/data/original_excels/` folder were combined into a single DataFrame. Metadata was preserved by tagging each row with its original file source (`Källa_fil`).
+
+2. **Column Cleanup**  
+   - Stripped whitespace from column names.
+   - Removed non-informative columns such as "Unnamed: 9", "Unnamed: 10", and "Unnamed: 13".
+   - Replaced problematic characters (å, ä, ö) with their ASCII equivalents to avoid encoding issues across platforms.
+
+3. **Date and Time Parsing**  
+   - Converted the `Datum` column to datetime format.
+   - Extracted month and weekday into new columns (`Månad`, `Veckodag`) to enable time-based visualizations.
+
+4. **Swedish to English Translation**  
+   Key categorical fields were translated for international accessibility:
+   - Animal species (`Viltlag`)  
+   - Animal sex (`Kön`)  
+   - Juvenile status (`Årsunge`)  
+   - Outcome (`Vad_har_skett_med_viltet`)  
+   - Collision type (`Typ av olycka`)  
+   - Data source (`Källa`)  
+   These translations were stored in new columns to preserve original data.
+
+5. **Final Renaming**  
+   All column names were systematically renamed to descriptive, English equivalents such as:
+   - `DjurId` → `Animal_ID`  
+   - `Lan` → `County`  
+   - `Datum` → `Date`  
+   - `Viltlag` → `Species`
+
+6. **Export**  
+   The cleaned dataset was saved as `cleaned_data.csv` in the `/data/` directory, containing over **635,000 entries** and ready for use in modeling and visualization tasks.
