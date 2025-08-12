@@ -10,7 +10,7 @@ def run():
     st.markdown("This section explores the hypotheses using visual analysis.")
 
     # Ladda data
-    df = load_clean_data(encoding="latin1")
+    df = load_clean_data(encoding="utf-8")
 
     st.subheader("Hypothesis 1: Wildlife collisions increase during autumn")
 
