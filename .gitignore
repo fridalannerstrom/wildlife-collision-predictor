@@ -4,6 +4,8 @@ data/*.csv
 
 # Modellfiler
 *.sav
+model/*.pkl
+model/*.pkl.*
 
 # Jupyter-kärnor
 .ipynb_checkpoints/
