@@ -18,6 +18,13 @@ def load_clean_data(encoding="latin1"):
             df = pd.read_csv(clean_data_url, encoding=encoding)
         else:
             df = pd.read_csv(DEFAULT_LOCAL_PATH, encoding=encoding)
+        
+        # 🧼 Rensa kolumnnamn och strängvärden
+        df.columns = df.columns.str.strip()
+        for col in ["County", "Municipality", "Species"]:
+            if col in df.columns:
+                df[col] = df[col].astype(str).str.strip()
+
     except pd.errors.ParserError as e:
         raise RuntimeError(
             "Kunde inte läsa CSV-filen. Kontrollera att URL:en pekar på en rå "

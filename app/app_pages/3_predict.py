@@ -48,6 +48,7 @@ def run():
                 municipality=municipality,
                 day_of_year=datetime.now().timetuple().tm_yday,
             )
+
             score, label, proba = predict_proba_label(X)
 
         # --- Risk levels with 5 categories ---
@@ -115,7 +116,8 @@ def run():
         # --- Explanation section ---
         with st.expander("📊 View top influential features"):
             st.write("These are the features that had the highest values in your prediction vector:")
-            nonzero = X.iloc[0][X.iloc[0] != 0].sort_values(ascending=False).head(10)
+            nonzero = X.select_dtypes(include="number").iloc[0]
+            nonzero = nonzero[nonzero != 0].sort_values(ascending=False).head(10)
             st.write(nonzero.to_frame("value"))
             if proba is not None:
                 st.markdown("**Prediction probabilities:**")

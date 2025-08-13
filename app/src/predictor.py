@@ -99,30 +99,38 @@ def build_feature_row(
     municipality: str | None = None,
     lat_wgs84: float | None = None,
     long_wgs84: float | None = None,
-    day_of_year: int | None = None
+    day_of_year: int | None = None,
+    weekday: str | None = None,
 ) -> pd.DataFrame:
-    base = {
+    import calendar
+
+    # Sätt defaultvärden om saknas
+    if municipality is None:
+        municipality = "Unknown"
+    if lat_wgs84 is None:
+        lat_wgs84 = 60.0
+    if long_wgs84 is None:
+        long_wgs84 = 15.0
+    if day_of_year is None:
+        day_of_year = pd.Timestamp(year=year, month=month, day=1).dayofyear
+    if weekday is None:
+        weekday = calendar.day_name[pd.Timestamp(year=year, month=month, day=1).weekday()]
+
+    # Skapa dataframe med originalfeatures
+    df = pd.DataFrame({
         "Year": [year],
         "Month": [month],
         "Hour": [hour],
-        "County": [county],
-        "Species": [species],
-    }
-    if municipality is not None:
-        base["Municipality"] = [municipality]
-    if day_of_year is not None:
-        base["Day_of_Year"] = [day_of_year]
-    if lat_wgs84 is not None:
-        base["Lat_WGS84"] = [lat_wgs84]
-    if long_wgs84 is not None:
-        base["Long_WGS84"] = [long_wgs84]
+        "County": [county.strip()],
+        "Municipality": [municipality.strip()],
+        "Species": [species.strip()],
+        "Lat_WGS84": [lat_wgs84],
+        "Long_WGS84": [long_wgs84],
+        "Day_of_Year": [day_of_year],
+        "Weekday": [weekday],
+    })
 
-    df = pd.DataFrame(base)
-    cat_cols = [c for c in ["County", "Municipality", "Species"] if c in df.columns]
-    df_dum = pd.get_dummies(df, columns=cat_cols, drop_first=False)
-    model_cols = load_model_columns()
-    X = _one_hot_align(df_dum, model_cols)
-    return X
+    return df
 
 # ---- Kör prediktion ----
 def predict_proba_label(X: pd.DataFrame):
