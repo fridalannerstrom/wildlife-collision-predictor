@@ -1,64 +1,78 @@
 import streamlit as st
-import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
-import numpy as np
-from src.data_loader import load_clean_data
-from src.predictor import load_model
 
 def run():
     st.title("🧠 Model Insights")
     st.markdown("""
-    This page provides insight into the model's training, performance, and behavior.
-    """)
+This page provides background on the machine learning model, hypotheses behind the predictions, and how the model was built and evaluated.
+""")
 
-    # ---- 1. Model Description ----
-    st.subheader("📦 Model Description")
+    # --- Model Summary ---
+    st.subheader("📌 Model Summary")
     st.markdown("""
-    - **Type:** Logistic Regression  
-    - **Target:** Predict wildlife collision risk (Low, Medium, High)  
-    - **Training Data:** Cleaned dataset of wildlife collisions in Sweden  
-    - **Features used:**  
-        - Time-related: hour, weekday, month, day of year  
-        - Location-related: county, municipality, coordinates  
-        - Animal species  
-    """)
+The prediction model is a supervised machine learning classifier trained on several years of wildlife collision data across Sweden.
 
-    # ---- 2. Model Performance (static for now) ----
-    st.subheader("📈 Model Performance (on training data)")
+It uses features such as:
+- **County**
+- **Municipality**
+- **Species**
+- **Month**
+- **Hour of day**
+- **Weekday**
+- **Day of Year**
+
+The model was trained using a pipeline that included one-hot encoding of categorical features and a classification algorithm (e.g. Random Forest or similar).  
+
+The trained model is saved as `model/model.pkl` and the list of training columns as `model/model_columns.pkl`.
+""")
+
+    # --- Hypotheses ---
+    st.subheader("📊 Hypotheses Behind the Model")
     st.markdown("""
-    Since the main goal was deployment and explainability, the model was evaluated using:
-    
-    - **Accuracy:** ~82%  
-    - **Precision/Recall (High risk):** ~0.85 / ~0.78  
-    - **Cross-validation:** 5-fold CV with similar results
+### Hypothesis 1  
+**Moose collision rates increase during autumn months (September–November).**  
+*Rationale:* Moose are more active during mating season, increasing road crossings and collision risk.
 
-    > ⚠️ Note: these numbers are approximations for demonstration. In production, you would use a proper evaluation set.
-    """)
+---
 
-    # ---- 3. Feature Importance ----
-    st.subheader("🔍 Top 10 Most Influential Features")
-    model = load_model()
+### Hypothesis 2  
+**Wildlife collisions are more common at dawn and dusk.**  
+*Rationale:* Many animals are crepuscular (active at dawn/dusk), which aligns with times of reduced visibility for drivers.
 
-    if hasattr(model, "coef_"):
-        coefs = model.coef_[0]
-        feature_names = model.feature_names_in_ if hasattr(model, "feature_names_in_") else range(len(coefs))
-        importance_df = pd.DataFrame({"feature": feature_names, "coefficient": coefs})
-        top10 = importance_df.reindex(importance_df.coefficient.abs().sort_values(ascending=False).index).head(10)
+---
 
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.barplot(x="coefficient", y="feature", data=top10, ax=ax)
-        ax.set_title("Top 10 Most Important Features (Logistic Regression Coefficients)")
-        st.pyplot(fig)
-    else:
-        st.info("Feature importance not available for this model.")
-    
-    # ---- 4. Model Limitations ----
-    st.subheader("🚧 Limitations")
+### Hypothesis 3  
+**Certain counties experience more wildlife collisions regardless of time of year.**  
+*Rationale:* Geographic and environmental differences (e.g. forest coverage, traffic density) may result in consistent regional risk patterns.
+""")
+
+    # --- Data Info ---
+    st.subheader("📁 Training Data")
     st.markdown("""
-    - The model may reflect data imbalance (e.g., more moose collisions in Värmland).
-    - It does not yet include traffic volume, road types, or weather – which could greatly improve accuracy.
-    - Coordinates are only averaged per municipality, which limits map precision.
+The model was trained on a cleaned dataset (`cleaned_data.csv`) containing over 100,000 rows of reported wildlife collisions. The raw dataset included:
+- Date and time of collision
+- Animal species
+- Location (county, municipality, coordinates)
+- Outcome (e.g., euthanized, dead at crash site)
 
-    > Despite these limitations, the model offers explainable, interpretable predictions suitable for public-facing use.
-    """)
+After cleaning, new features like **Month**, **Hour**, and **Day_of_Year** were extracted to support time-based predictions.
+""")
+
+    # --- Performance Note ---
+    st.subheader("⚙️ Model Performance")
+    st.markdown("""
+Due to project scope and runtime constraints, the final model was evaluated manually and validated through real-time predictions in the app.
+
+The risk levels are classified into five categories based on prediction probability:
+- Very Low (score < 0.33)
+- Low
+- Moderate
+- High
+- Very High (score > 0.85)
+""")
+
+    st.success("Model predictions are live in the Prediction page – try different inputs to explore!")
+
+
+if __name__ == "__main__":
+    run()
