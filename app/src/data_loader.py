@@ -12,22 +12,12 @@ def load_clean_data(encoding="latin1"):
     Loads the dataset from URL in CLEAN_DATA_URL if provided, otherwise from local path.
     """
     clean_data_url = os.getenv("CLEAN_DATA_URL")
-    
+
     try:
         if clean_data_url:
-            df = pd.read_csv(
-                clean_data_url,
-                encoding=encoding,
-                # on_bad_lines="skip",  # optional
-                # sep=",",              # optional
-            )
+            df = pd.read_csv(clean_data_url, encoding=encoding)
         else:
-            df = pd.read_csv(
-                DEFAULT_LOCAL_PATH,
-                encoding=encoding,
-                # on_bad_lines="skip",  # optional
-                # sep=",",              # optional
-            )
+            df = pd.read_csv(DEFAULT_LOCAL_PATH, encoding=encoding)
     except pd.errors.ParserError as e:
         raise RuntimeError(
             "Kunde inte läsa CSV-filen. Kontrollera att URL:en pekar på en rå "
@@ -39,5 +29,20 @@ def load_clean_data(encoding="latin1"):
 
     if df.empty:
         raise RuntimeError("CSV lästes in men är tom. Kontrollera källfilen.")
+
+    # 💡 Extrahera datumkomponenter från 'Time'
+    if "Time" in df.columns:
+        df["Time"] = pd.to_datetime(df["Time"], errors="coerce")
+
+        if "Year" not in df.columns:
+            df["Year"] = df["Time"].dt.year
+        if "Month" not in df.columns:
+            df["Month"] = df["Time"].dt.month
+        if "Hour" not in df.columns:
+            df["Hour"] = df["Time"].dt.hour
+        if "Date" not in df.columns:
+            df["Date"] = df["Time"].dt.date
+        if "Day_of_Year" not in df.columns:
+            df["Day_of_Year"] = df["Time"].dt.dayofyear
 
     return df
