@@ -617,7 +617,7 @@ This section explains how we calculate a baseline collision risk score for each 
 - Month
 - Hour of day
 
-### 🔄 Process overview
+### 🔄 Process overview 
 
 1. **Input data:** `cleaned_data.csv`
 2. **Clean and prepare:**
