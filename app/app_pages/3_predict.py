@@ -11,7 +11,6 @@ from src.predictor import (
 )
 from src.data_loader import load_clean_data
 
-
 def run():
     st.title("🔮 Wildlife Collision Risk Prediction")
     st.markdown("**Select location and time – get collision risk level and map.**")
@@ -20,7 +19,6 @@ def run():
     uv = load_unique_values()
     counties = uv["counties"]
     species_list = uv["species"]
-    weekday_opts = uv["weekdays"]
 
     # --- Step 1: Select Location ---
     st.subheader("1️⃣ Select Location")
@@ -30,13 +28,11 @@ def run():
 
     # --- Step 2: Select Time & Species ---
     st.subheader("2️⃣ Select Time & Species")
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
         month = st.selectbox("Month", list(range(1, 13)), index=datetime.now().month - 1, help="Choose the month of travel.")
     with col2:
         hour = st.slider("Hour of Day", 0, 23, datetime.now().hour, help="Choose the approximate hour.")
-    with col3:
-        weekday = st.selectbox("Weekday", weekday_opts, index=datetime.now().weekday(), help="Pick a day of the week.")
 
     species = st.selectbox("Species", ["All species"] + [s for s in species_list if s != "All species"], help="Optionally filter by specific species.")
 
@@ -47,7 +43,6 @@ def run():
                 year=datetime.now().year,
                 month=month,
                 hour=hour,
-                weekday=weekday,
                 county=county,
                 species=species,
                 municipality=municipality,
@@ -81,7 +76,6 @@ def run():
 
         # --- Map ---
         st.subheader("🗺️ Prediction Location on Map")
-
         loc_df = df[(df["County"] == county) & (df["Municipality"] == municipality)].dropna(subset=["Lat_WGS84", "Long_WGS84"])
 
         if not loc_df.empty:
@@ -126,7 +120,6 @@ def run():
             if proba is not None:
                 st.markdown("**Prediction probabilities:**")
                 st.write(proba)
-
 
 if __name__ == "__main__":
     run()

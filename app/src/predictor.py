@@ -19,7 +19,7 @@ _model = None
 _model_cols = None
 _unique_values_cache = None
 
-# ---- Automatiska nedladdningar ----
+# ---- Ladda modell från disk eller GitHub ----
 def _download_if_missing(path: str, url: str):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if not os.path.exists(path):
@@ -27,7 +27,6 @@ def _download_if_missing(path: str, url: str):
         urlretrieve(url, path)
         print(f"✅ Saved to {path}")
 
-# ---- Ladda modell & kolumner ----
 def load_model():
     global _model
     if _model is None:
@@ -43,11 +42,20 @@ def load_model_columns():
             _model_cols = pickle.load(f)
     return _model_cols
 
-# ---- Läs unika värden från cleaned_data.csv ----
+# ---- Läs unika värden från datan ----
 def load_unique_values():
     global _unique_values_cache
     if _unique_values_cache is None:
         df = load_clean_data()
+        
+        # Konvertera datumfält om det behövs
+        if "Time" in df.columns:
+            df["Time"] = pd.to_datetime(df["Time"], errors="coerce")
+            if "Month" not in df.columns:
+                df["Month"] = df["Time"].dt.month
+            if "Year" not in df.columns:
+                df["Year"] = df["Time"].dt.year
+        
         required = ["County", "Municipality", "Species"]
         missing = [c for c in required if c not in df.columns]
         if missing:
@@ -69,12 +77,11 @@ def load_unique_values():
         }
     return _unique_values_cache
 
-# ---- Hjälpfunktion: hämta kommuner per län ----
 def get_municipalities_for_county(county: str) -> list:
     uv = load_unique_values()
     return uv["county_to_munis"].get(county, [])
 
-# ---- Matcha modellens exakta kolumner ----
+# ---- Matcha modellens features ----
 def _one_hot_align(frame: pd.DataFrame, model_cols: list) -> pd.DataFrame:
     X = frame.copy()
     for c in model_cols:
@@ -82,7 +89,7 @@ def _one_hot_align(frame: pd.DataFrame, model_cols: list) -> pd.DataFrame:
             X[c] = 0
     return X[model_cols]
 
-# ---- Bygg feature-rad från användarinmatning ----
+# ---- Skapa feature-rad till modellen ----
 def build_feature_row(
     year: int,
     month: int,
@@ -117,7 +124,7 @@ def build_feature_row(
     X = _one_hot_align(df_dum, model_cols)
     return X
 
-# ---- Kör modell och returnera sannolikhet + label ----
+# ---- Kör prediktion ----
 def predict_proba_label(X: pd.DataFrame):
     model = load_model()
     if hasattr(model, "predict_proba"):
