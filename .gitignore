@@ -1,8 +1,6 @@
 # Rådatafiler
-data/original_excels/
 data/*.xlsx
 data/*.csv
-data/cleaned_with_clusters.csv
 
 # Modellfiler
 *.sav
