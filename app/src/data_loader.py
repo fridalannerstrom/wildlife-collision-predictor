@@ -17,7 +17,7 @@ load_dotenv()
 
 DEFAULT_LOCAL_PATH = "data/cleaned_data.csv"
 
-def load_clean_data(encoding="latin1"):
+def load_clean_data(encoding="utf-8"):
     """
     Loads the cleaned collision dataset.
     
