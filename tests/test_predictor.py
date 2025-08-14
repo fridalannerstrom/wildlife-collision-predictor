@@ -2,15 +2,16 @@ import sys
 import os
 import pandas as pd
 
-from app.src.predictor import (
+app_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "app")
+)
+
+from src.predictor import (
     build_feature_row,
     predict_proba_label,
     load_model_columns,
 )
 
-app_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "app")
-)
 sys.path.insert(0, app_path)
 
 

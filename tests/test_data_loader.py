@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 # Import the function we want to test
-from app.src.data_loader import load_clean_data
+from src.data_loader import load_clean_data
 
 # Add the "app" directory to the Python path
 app_path = os.path.abspath(

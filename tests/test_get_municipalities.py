@@ -2,7 +2,7 @@ import sys
 import os
 
 # Import the functions to test
-from app.src.predictor import get_municipalities_for_county, load_unique_values
+from src.predictor import get_municipalities_for_county, load_unique_values
 
 # Add the "app" directory to the Python path
 app_path = os.path.abspath(
