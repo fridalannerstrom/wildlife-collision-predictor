@@ -639,3 +639,39 @@ This section explains how we calculate a baseline collision risk score for each 
 |---------|-------------|-------|------|--------------|------------|
 | Blekinge | Fallow Deer | 1     | 6    | 5            | 0.1600     |
 | ...     | ...         | ...   | ...  | ...          | ...        |
+
+### 🧠 Model Training
+
+The machine learning model was trained in a Jupyter Notebook using a cleaned version of wildlife collision data from the Nationella Viltolycksrådet (viltolycka.se). The goal was to predict the **wildlife collision risk** at a given location and time based on factors such as:
+
+- Time of day (hour)
+- Date components (month, day of year, weekday)
+- County and municipality
+- Animal species
+- GPS coordinates (lat/long)
+
+I used a **scikit-learn pipeline** that includes:
+
+- One-hot encoding for categorical variables (County, Municipality, Species, Weekday)
+- Scaling of numerical variables (Lat/Long, Hour, Day of Year)
+- A classifier (Random Forest) with hyperparameter tuning
+
+The model was trained on historical data and exported using `joblib`. The list of expected features was also saved to a separate `model_columns.pkl` file to ensure compatibility at prediction time.
+
+---
+
+#### ⚠️ Challenges during training
+
+While building the model, I ran into a number of data-related issues that had to be resolved:
+
+- **Whitespace in columns**: Some columns had extra spaces (e.g. `" County"` instead of `"County"`), which caused mismatches during one-hot encoding and feature alignment. I resolved this by stripping all column names and string values.
+- **Swedish characters and encoding**: I had to load the data using `"latin1"` encoding instead of `"utf-8"` to handle Swedish characters like "å", "ä", and "ö".
+- **Missing or incorrect weekday values**: Weekday information was not always available or correctly derived from the date. I added logic to compute the weekday from the timestamp if it was missing.
+- **Feature alignment between model and app**: Initially, I encoded categorical variables manually before prediction, which caused issues because the pipeline already handled this internally. Once I passed raw features into the pipeline (as intended), the prediction worked properly.
+- **Sorting features in the dashboard**: When visualizing the most influential features in Streamlit, I ran into errors caused by trying to sort string values. This was resolved by filtering for numeric columns only.
+
+---
+
+#### ✅ Final Outcome
+
+The final model is a robust Random Forest classifier that takes raw input features and outputs a probability score for wildlife collision risk. The model was exported as a pipeline (`model.pkl`) and integrated directly into the Streamlit application for real-time prediction.
