@@ -113,6 +113,7 @@ The user selects:
 | Final Model (RF)   | 83%      | 0.82     |
 
 ![Classification Report and Confusion Matrix](images/model.png)
+
 The confusion matrix confirms strong performance across all classes, particularly for "Very High" and "Very Low" risk levels. Some overlap is expected between adjacent categories such as "Low" and "Moderate".
 
 ---
