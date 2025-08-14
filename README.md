@@ -1,7 +1,7 @@
-# 🚀 Wildlife Collision Predictor
+# 🦌🚗 Wildlife Collision Predictor
 
 
-## 🌟 Overview
+## Overview
 This Streamlit-powered machine learning app predicts **wildlife collision risk** on Swedish roads based on:
 - Location (county + municipality)
 - Time (month, hour)
@@ -9,9 +9,11 @@ This Streamlit-powered machine learning app predicts **wildlife collision risk**
 
 The app outputs a **five-tier risk level**, color-coded for clarity, and displays the selected location on an interactive map. It also includes an **explainable AI panel**, interactive EDA visualizations, and a comprehensive model insights section.
 
+👉 [**Try the app live here**](https://wildlife-collision-risk-app-832a274b12fb.herokuapp.com/)
+
 ---
 
-## 💡 Motivation
+## Motivation
 Wildlife-vehicle collisions are a serious issue in Sweden, particularly in forested regions. This project was built to:
 - Explore real collision patterns in Sweden
 - Provide practical insights to drivers, municipalities, and insurers
@@ -19,7 +21,7 @@ Wildlife-vehicle collisions are a serious issue in Sweden, particularly in fores
 
 ---
 
-## 🔍 Features
+## Features
 - ✅ **Cascading dropdowns**: County → Municipality (based on cleaned data mapping)
 - ✅ **Time-based input**: Month, Hour
 - ✅ **Species filtering**: Moose, deer, boar, etc.
@@ -31,7 +33,7 @@ Wildlife-vehicle collisions are a serious issue in Sweden, particularly in fores
 
 ---
 
-## 📂 Folder Structure
+## Folder Structure
 ```
 ├── app.py                  # Entry point
 ├── app_pages/              # Streamlit pages (EDA, Predict, Model Insights, Hypotheses)
@@ -48,7 +50,7 @@ Wildlife-vehicle collisions are a serious issue in Sweden, particularly in fores
 
 ---
 
-## 📚 How It Works
+## How It Works
 
 ### 1. User Input
 The user selects:
@@ -82,17 +84,17 @@ The user selects:
 
 ---
 
-## 🔄 Modeling
-### 🎯 Target: Wildlife Collision Risk
+## Modeling
+### Target: Wildlife Collision Risk
 - Binary classification task (collision likely / not likely)
 - Trained on real collision data from [viltolycka.se](https://www.viltolycka.se/statistik/)
 
-### 🤗 Features
+### Features
 - **Categorical:** County, Municipality, Species, Weekday
 - **Temporal:** Month, Hour
 - **Spatial:** Latitude and Longitude
 
-### ⚖️ Model Pipeline
+### Model Pipeline
 - `ColumnTransformer` with:
   - `OneHotEncoder` (categorical)
   - `StandardScaler` (numerical)
@@ -100,7 +102,7 @@ The user selects:
 - GridSearchCV tuning over 6 hyperparameters, each with 3 values:
   - `n_estimators`, `max_depth`, `min_samples_split`, `min_samples_leaf`, `max_features`, `bootstrap`
 
-### 📊 Performance
+### Performance
 | Model              | Accuracy | F1 Score |
 |--------------------|----------|----------|
 | Baseline (Dummy)   | 41%      | 0.00     |
@@ -108,7 +110,7 @@ The user selects:
 
 ---
 
-## 🐟 Hypotheses
+## Hypotheses
 The following hypotheses were formulated and validated using visual analytics:
 
 ### Hypothesis 1: Moose collisions increase in autumn
@@ -122,14 +124,14 @@ The following hypotheses were formulated and validated using visual analytics:
 
 ---
 
-## 🌐 Deployment
+## Deployment
 - Hosted on **Heroku** via `Procfile`, `setup.sh`, and `requirements.txt`
 - Model files downloaded dynamically from **GitHub Releases**
 - `.csv` files are excluded from Git and GitHub to stay under the 100MB limit
 
 ---
 
-## 🚀 Run Locally
+## Run Locally
 ```bash
 # 1. Clone repo
 $ git clone https://github.com/yourusername/wildlife-collision-predictor.git
@@ -147,7 +149,7 @@ $ pytest tests/
 
 ---
 
-## 📝 Automated Testing
+## Automated Testing
 This project includes a suite of automated tests using **pytest** to ensure correctness and maintainability.
 
 ### Test Summary
@@ -171,7 +173,7 @@ All tests pass ✅
 
 ---
 
-## 📅 Work Log Highlights
+## Work Log Highlights
 
 ### Setup & Cleaning
 - Combined 10 Excel files with over 635,000 rows
@@ -196,7 +198,7 @@ All tests pass ✅
 
 ---
 
-## 🐞 Known Issues & Limitations
+## Known Issues & Limitations
 
 Despite being a functional and well-tested app, there are a few known limitations that could be addressed in future iterations:
 
@@ -218,10 +220,9 @@ Despite being a functional and well-tested app, there are a few known limitation
 - **Static dropdowns:**  
   Users must manually select county and municipality from dropdowns. A more intuitive UX might allow clicking directly on the map or using GPS.
 
-
 ---
 
-## 📖 Learnings & Reflections
+## Learnings & Reflections
 - Streamlit made rapid UI prototyping easy and powerful
 - GitHub Releases is a smart workaround for model file hosting
 - Learned the importance of data cleaning, encoding, and feature alignment
@@ -229,7 +230,7 @@ Despite being a functional and well-tested app, there are a few known limitation
 
 ---
 
-## 🌯️ Future Work
+## Future Work
 If I were to continue developing this app, here are some areas I’d prioritize:
 
 1. **Speed Optimization**
@@ -267,7 +268,7 @@ If I were to continue developing this app, here are some areas I’d prioritize:
 
 ---
 
-## 🚫 Data Notice
+## Data Notice
 Collision data is provided by Trafikverket/Viltolycksradet and used for non-commercial, educational purposes.
 
 ---
