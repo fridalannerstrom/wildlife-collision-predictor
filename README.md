@@ -208,6 +208,20 @@ All tests pass ✅
 
 ---
 
+## Code Quality and Linting
+
+All Python files in this project have been linted using **[flake8](https://flake8.pycqa.org/)** to ensure adherence to PEP8 style guidelines.
+
+- ✅ No linting warnings or errors remain.
+- ✅ Long lines have been wrapped to respect line length limits.
+- ✅ Import statements have been grouped and broken into readable format.
+- ✅ Inline comments and docstrings follow consistent, clean style.
+
+This improves **readability**, **maintainability**, and ensures the codebase follows industry best practices for Python development.
+
+
+---
+
 ## Known Issues & Limitations
 
 Despite being a functional and well-tested app, there are a few known limitations that could be addressed in future iterations:

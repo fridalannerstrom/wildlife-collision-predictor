@@ -1,7 +1,6 @@
 # app_pages/3_predict.py
 
 import streamlit as st
-import pandas as pd
 from datetime import datetime
 import plotly.graph_objects as go
 
@@ -26,11 +25,17 @@ def run():
     """
     Streamlit page: Wildlife Collision Risk Prediction
 
-    Allows users to input a location, time, and optionally a species to get a predicted
-    risk level of wildlife collision, along with safety advice and map visualization.
+    Allows users to input a location, time, and optionally a species to get a
+    predicted risk level of wildlife collision, along with safety advice and
+    map visualization.
     """
+
     st.title("Wildlife Collision Risk Prediction")
-    st.markdown("**Select a location and time to get predicted collision risk level and visual feedback.**")
+
+    st.markdown(
+        "**Select a location and time to get predicted collision risk level "
+        "and visual feedback.**"
+    )
 
     # -----------------------------------------
     # Load data and unique values for form
@@ -44,9 +49,15 @@ def run():
     # Step 1: Select location (County & Municipality)
     # -----------------------------------------
     st.subheader("Step 1: Select Location")
-    county = st.selectbox("County", counties, help="Choose the county where you plan to travel.")
+    county = st.selectbox(
+        "County", counties,
+        help="Choose the county where you plan to travel."
+    )
     munis = get_municipalities_for_county(county)
-    municipality = st.selectbox("Municipality", munis, help="Select a specific municipality in the county.")
+    municipality = st.selectbox(
+        "Municipality", munis,
+        help="Select a specific municipality in the county."
+    )
 
     # -----------------------------------------
     # Step 2: Select time and (optional) species
@@ -54,7 +65,10 @@ def run():
     st.subheader("Step 2: Select Time & Species")
     col1, col2 = st.columns(2)
     with col1:
-        month = st.selectbox("Month", list(range(1, 13)), index=datetime.now().month - 1)
+        month = st.selectbox(
+            "Month", list(range(1, 13)),
+            index=datetime.now().month - 1
+        )
     with col2:
         hour = st.slider("Hour of Day", 0, 23, datetime.now().hour)
 
@@ -99,15 +113,33 @@ def run():
         # Display result + safety advice
         # -----------------------------------------
         st.subheader("Result")
-        st.metric("Risk Level", label, delta=f"adjusted: {adjusted_score:.2f}")
+        st.metric(
+            "Risk Level", label,
+            delta=f"adjusted: {adjusted_score:.2f}"
+        )
         st.caption(f"⚙️ Raw model score: {score:.2f}")
 
         advice = {
-            "Very High": "🚨 Very high risk predicted for this time and location. Avoid travel if possible or proceed with extreme caution.",
-            "High": "⚠️ High risk of wildlife collision at the selected time and place. Reduce speed and stay extremely alert.",
-            "Moderate": "🔶 Moderate risk detected. Be attentive and watch for wildlife near the road, especially around forest areas.",
-            "Low": "🟢 Low risk based on your selected input. Stay alert and follow local signage.",
-            "Very Low": "🟦 Very low collision risk predicted for this time and location. Drive with normal caution.",
+            "Very High": (
+                "🚨 Very high risk predicted for this time and location. "
+                "Avoid travel if possible or proceed with extreme caution."
+            ),
+            "High": (
+                "⚠️ High risk of wildlife collision at the selected time and "
+                "place. Reduce speed and stay extremely alert."
+            ),
+            "Moderate": (
+                "🔶 Moderate risk detected. Be attentive and watch for "
+                "wildlife near the road, especially around forest areas."
+            ),
+            "Low": (
+                "🟢 Low risk based on your selected input. Stay alert and "
+                "follow local signage."
+            ),
+            "Very Low": (
+                "🟦 Very low collision risk predicted for this time and "
+                "location. Drive with normal caution."
+            ),
         }
         st.info(advice.get(label, "Stay alert and follow local signage."))
 
@@ -116,9 +148,10 @@ def run():
         # -----------------------------------------
         st.subheader("Prediction Location on Map")
 
-        loc_df = df[(df["County"] == county) & (df["Municipality"] == municipality)].dropna(
-            subset=["Lat_WGS84", "Long_WGS84"]
-        )
+        loc_df = df[
+            (df["County"] == county)
+            & (df["Municipality"] == municipality)
+        ].dropna(subset=["Lat_WGS84", "Long_WGS84"])
 
         if not loc_df.empty:
             map_lat = loc_df["Lat_WGS84"].mean()
@@ -140,7 +173,10 @@ def run():
                     'blue'
                 )
             ),
-            text=f"{label} risk<br>Species: {species}<br>Time: {hour}:00<br>Score: {adjusted_score:.2f}",
+            text=(
+                f"{label} risk<br>Species: {species}<br>"
+                f"Time: {hour}:00<br>Score: {adjusted_score:.2f}"
+            ),
             hoverinfo='text'
         ))
 
@@ -158,9 +194,16 @@ def run():
         # Show feature vector values and probabilities
         # -----------------------------------------
         with st.expander("View top influential features"):
-            st.write("These are the features that had the highest values in your prediction vector:")
+            st.write(
+                "These are the features that had the highest values "
+                "in your prediction vector:"
+            )
             nonzero = X.select_dtypes(include="number").iloc[0]
-            nonzero = nonzero[nonzero != 0].sort_values(ascending=False).head(10)
+            nonzero = (
+                nonzero[nonzero != 0]
+                .sort_values(ascending=False)
+                .head(10)
+            )
             st.write(nonzero.to_frame("value"))
 
             if proba is not None:

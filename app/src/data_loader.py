@@ -1,8 +1,8 @@
 """
 data_loader.py
 
-Loads the cleaned wildlife collision dataset from either a remote GitHub URL 
-or a local CSV file. Handles basic cleaning of column names, data types, 
+Loads the cleaned wildlife collision dataset from either a remote GitHub URL
+or a local CSV file. Handles basic cleaning of column names, data types,
 and extracts temporal features from timestamps.
 
 Used throughout the app to provide consistent access to data.
@@ -17,14 +17,17 @@ load_dotenv()
 
 DEFAULT_LOCAL_PATH = "data/cleaned_data.csv"
 
+
 def load_clean_data(encoding="utf-8"):
     """
     Loads the cleaned collision dataset.
-    
+
     - Tries to load from CLEAN_DATA_URL (if set), otherwise from local file.
-    - Strips column names and certain string columns (County, Municipality, Species)
-    - Parses 'Time' column into derived features: Year, Month, Hour, Day_of_Year, etc.
-    
+    - Strips column names and certain string columns
+      (County, Municipality, Species)
+    - Parses 'Time' column into derived features:
+      Year, Month, Hour, Day_of_Year, etc.
+
     Returns:
         pd.DataFrame: Cleaned dataset ready for analysis or prediction.
     """
@@ -45,14 +48,19 @@ def load_clean_data(encoding="utf-8"):
 
     except pd.errors.ParserError as e:
         raise RuntimeError(
-            "Could not parse CSV file. Make sure the URL is a raw CSV and the encoding/delimiter is correct."
+            "Could not parse CSV file. Make sure the URL is a raw CSV and "
+            "the encoding/delimiter is correct."
         ) from e
     except Exception as e:
         where = "CLEAN_DATA_URL" if clean_data_url else DEFAULT_LOCAL_PATH
-        raise RuntimeError(f"Failed to load data from: {where}") from e
+        raise RuntimeError(
+            f"Failed to load data from: {where}"
+        ) from e
 
     if df.empty:
-        raise RuntimeError("CSV file loaded but is empty. Check the data source.")
+        raise RuntimeError(
+            "CSV file loaded but is empty. Check the data source."
+        )
 
     # Parse and extract time features
     if "Time" in df.columns:

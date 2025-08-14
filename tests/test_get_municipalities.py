@@ -1,12 +1,14 @@
 import sys
 import os
-import pytest
-
-# Add the "app" directory to the Python path so imports work when running pytest
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app")))
 
 # Import the functions to test
-from src.predictor import get_municipalities_for_county, load_unique_values
+from app.src.predictor import get_municipalities_for_county, load_unique_values
+
+# Add the "app" directory to the Python path
+app_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "app")
+)
+sys.path.insert(0, app_path)
 
 
 def test_get_municipalities_for_known_county():

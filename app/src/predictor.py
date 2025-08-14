@@ -3,7 +3,7 @@ predictor.py
 
 Handles loading of the trained ML model and performing predictions
 based on input features. Also includes helper functions to load unique values
-(counties, species, municipalities) from the cleaned dataset for use in dropdowns.
+from the cleaned dataset for use in dropdowns.
 """
 
 import os
@@ -17,11 +17,17 @@ from src.data_loader import load_clean_data
 # ------------------------------------------------------
 # Paths to model files (local and GitHub fallback)
 # ------------------------------------------------------
-MODEL_PATH = os.path.join("model", "model.pkl.xz")  # Compressed model file
+MODEL_PATH = os.path.join("model", "model.pkl.xz")
 COLUMNS_PATH = os.path.join("model", "model_columns.pkl")
 
-MODEL_URL = "https://github.com/fridalannerstrom/wildlife-collision-predictor/releases/download/model/model.pkl"
-COLUMNS_URL = "https://github.com/fridalannerstrom/wildlife-collision-predictor/releases/download/model/model_columns.pkl"
+MODEL_URL = (
+    "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
+    "releases/download/model/model.pkl"
+)
+COLUMNS_URL = (
+    "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
+    "releases/download/model/model_columns.pkl"
+)
 
 _model = None
 _model_cols = None
@@ -30,6 +36,8 @@ _unique_values_cache = None
 # ------------------------------------------------------
 # Helper: Download model file from GitHub if missing
 # ------------------------------------------------------
+
+
 def _download_if_missing(path: str, url: str):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if not os.path.exists(path):
@@ -40,12 +48,15 @@ def _download_if_missing(path: str, url: str):
 # ------------------------------------------------------
 # Load model from local or GitHub
 # ------------------------------------------------------
+
+
 def load_model():
     global _model
     if _model is None:
         _download_if_missing(MODEL_PATH, MODEL_URL)
         _model = joblib.load(MODEL_PATH)
     return _model
+
 
 def load_model_columns():
     global _model_cols
@@ -58,10 +69,12 @@ def load_model_columns():
 # ------------------------------------------------------
 # Load unique values for dropdowns (cached)
 # ------------------------------------------------------
+
+
 def load_unique_values():
     """
-    Extract unique counties, species, and a mapping of municipalities from the cleaned data.
-    Useful for populating dropdowns in the UI.
+    Extract unique counties, species, and a mapping of municipalities
+    from the cleaned data. Useful for populating dropdowns in the UI.
     """
     global _unique_values_cache
     if _unique_values_cache is None:
@@ -79,14 +92,23 @@ def load_unique_values():
         required = ["County", "Municipality", "Species"]
         missing = [c for c in required if c not in df.columns]
         if missing:
-            raise ValueError(f"Missing columns in cleaned_data.csv: {missing}")
+            raise ValueError(
+                f"Missing columns in cleaned_data.csv: {missing}"
+            )
 
-        counties = sorted([c for c in df["County"].dropna().unique() if str(c).strip()])
-        species = sorted([s for s in df["Species"].dropna().unique() if str(s).strip()])
+        counties = sorted([
+            c for c in df["County"].dropna().unique()
+            if str(c).strip()
+        ])
+        species = sorted([
+            s for s in df["Species"].dropna().unique()
+            if str(s).strip()
+        ])
 
         county_to_munis = {}
         for c in counties:
-            munis = df.loc[df["County"] == c, "Municipality"].dropna().unique()
+            munis = df.loc[df["County"] == c, "Municipality"]
+            munis = munis.dropna().unique()
             munis = sorted([m for m in munis if str(m).strip()])
             county_to_munis[c] = munis
 
@@ -96,6 +118,7 @@ def load_unique_values():
             "county_to_munis": county_to_munis,
         }
     return _unique_values_cache
+
 
 def get_municipalities_for_county(county: str) -> list:
     """
@@ -107,6 +130,8 @@ def get_municipalities_for_county(county: str) -> list:
 # ------------------------------------------------------
 # Build input row from user selections
 # ------------------------------------------------------
+
+
 def build_feature_row(
     year: int,
     month: int,
@@ -120,8 +145,9 @@ def build_feature_row(
     weekday: str | None = None,
 ) -> pd.DataFrame:
     """
-    Construct a single-row DataFrame with features expected by the trained model.
-    This raw input will be processed by the model pipeline (no need to encode).
+    Construct a single-row DataFrame with features expected
+    by the trained model. This raw input will be processed
+    by the model pipeline (no need to encode).
     """
     import calendar
 
@@ -133,9 +159,13 @@ def build_feature_row(
     if long_wgs84 is None:
         long_wgs84 = 15.0
     if day_of_year is None:
-        day_of_year = pd.Timestamp(year=year, month=month, day=1).dayofyear
+        day_of_year = pd.Timestamp(
+            year=year, month=month, day=1
+        ).dayofyear
     if weekday is None:
-        weekday = calendar.day_name[pd.Timestamp(year=year, month=month, day=1).weekday()]
+        weekday = calendar.day_name[
+            pd.Timestamp(year=year, month=month, day=1).weekday()
+        ]
 
     # Create DataFrame
     return pd.DataFrame({
@@ -154,9 +184,12 @@ def build_feature_row(
 # ------------------------------------------------------
 # Make prediction and return probability and label
 # ------------------------------------------------------
+
+
 def predict_proba_label(X: pd.DataFrame):
     """
     Predict collision probability using the trained model.
+
     Returns:
         - score (float): probability of collision (if applicable)
         - label (str): only used in non-probabilistic models

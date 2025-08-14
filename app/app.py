@@ -1,4 +1,4 @@
-import streamlit as st 
+import streamlit as st
 from pathlib import Path
 import importlib
 
@@ -12,9 +12,11 @@ st.set_page_config(
 )
 
 st.title("Wildlife Collision Predictor")
-st.write(
-    "Welcome! Use the sidebar to navigate between the different sections of the dashboard."
-)
+st.write("""
+Welcome!
+Use the sidebar to navigate between the different sections
+of the dashboard.
+""")
 
 # -------------------------------
 # Load all pages from app_pages/
@@ -37,7 +39,9 @@ selected = st.sidebar.selectbox("Go to section", page_names)
 
 # Load selected module
 selected_file = next(
-    p for p in page_files if selected.lower().replace(" ", "_") in p.name.lower()
+    p
+    for p in page_files
+    if selected.lower().replace(" ", "_") in p.name.lower()
 )
 module_name = f"app_pages.{selected_file.stem}"
 page_module = importlib.import_module(module_name)

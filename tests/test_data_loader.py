@@ -1,13 +1,15 @@
 import sys
 import os
-import pytest
 import pandas as pd
 
-# Add the "app" directory to the Python path so imports work when running pytest
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app")))
-
 # Import the function we want to test
-from src.data_loader import load_clean_data
+from app.src.data_loader import load_clean_data
+
+# Add the "app" directory to the Python path
+app_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "app")
+)
+sys.path.insert(0, app_path)
 
 
 def test_load_clean_data_returns_dataframe():
