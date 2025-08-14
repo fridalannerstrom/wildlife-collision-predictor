@@ -196,6 +196,31 @@ All tests pass ✅
 
 ---
 
+## 🐞 Known Issues & Limitations
+
+Despite being a functional and well-tested app, there are a few known limitations that could be addressed in future iterations:
+
+- **Performance (Speed):**  
+  The app is currently slow, especially during initial load or prediction. This is partly due to:
+  - Large CSV files being read at runtime instead of stored in a database or cached.
+  - Model file download/loading from GitHub Release (especially cold start on Heroku).
+  - Use of Plotly map visualizations, which can be heavy in browser rendering.
+
+- **Simplified Feature Set:**  
+  Some potentially important features are missing (e.g. **traffic density**, **road type**, **vegetation type**) due to lack of available data.
+
+- **Imbalanced Data:**  
+  Wildlife collisions are sparse events. Even though oversampling was not used, class imbalance could affect generalization.
+
+- **No persistent database:**  
+  The app doesn't use a database — all predictions are ephemeral. This limits its use in real monitoring or historical trend analysis.
+
+- **Static dropdowns:**  
+  Users must manually select county and municipality from dropdowns. A more intuitive UX might allow clicking directly on the map or using GPS.
+
+
+---
+
 ## 📖 Learnings & Reflections
 - Streamlit made rapid UI prototyping easy and powerful
 - GitHub Releases is a smart workaround for model file hosting
@@ -205,10 +230,40 @@ All tests pass ✅
 ---
 
 ## 🌯️ Future Work
-- Add traffic density or road type as features
-- Integrate real-time weather conditions
-- Allow users to select point on map instead of dropdown
-- Publish public-facing version for Trafikverket or insurers
+If I were to continue developing this app, here are some areas I’d prioritize:
+
+1. **Speed Optimization**
+   - Cache model and data loading using `@st.cache_data` or similar.
+   - Host data and model files on faster services (e.g. Amazon S3, Firebase).
+   - Replace full-data filtering with pre-aggregated lookup tables or API endpoints.
+
+2. **Add More Predictive Features**
+   - Integrate road type (e.g. highway, forest road).
+   - Add real-time traffic or weather data to refine predictions.
+   - Include species-specific movement patterns if available.
+
+3. **Map-First Interaction**
+   - Let users click a location on the map and get prediction directly.
+   - Implement bounding-box selection or route-based predictions.
+
+4. **Trend & Reporting Tools**
+   - Allow exporting reports or weekly risk summaries per region.
+   - Add heatmaps or risk trends over time.
+
+5. **Model Retraining Pipeline**
+   - Set up scripts to automate model retraining as new collision data is added.
+   - Version models properly and track performance over time.
+
+6. **Use a Database**
+   - Store prediction logs or allow users to save predictions for analysis.
+   - Enable user accounts for personalized dashboards or areas of interest.
+
+7. **Admin Dashboard**
+   - For municipalities or researchers: ability to monitor top risk areas, download data, and simulate what-if scenarios.
+
+8. **Mobile Adaptation**
+   - Optimize layout for mobile.
+   - Consider building a native app with same backend logic using a framework like Flutter or React Native.
 
 ---
 
@@ -217,7 +272,5 @@ Collision data is provided by Trafikverket/Viltolycksradet and used for non-comm
 
 ---
 
-## 📢 Contact
-Frida – hello@tqai.se
 
 > "Drive slow, watch the forest — and maybe one day, this app will help you avoid a moose." 🦌🚗
