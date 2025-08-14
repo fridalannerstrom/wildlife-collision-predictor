@@ -103,4 +103,71 @@ def run():
         st.caption(f"⚙️ Raw model score: {score:.2f}")
 
         advice = {
-            "Very High": "🚨 Very high risk – avoid t
+            "Very High": "🚨 Very high risk predicted for this time and location. Avoid travel if possible or proceed with extreme caution.",
+            "High": "⚠️ High risk of wildlife collision at the selected time and place. Reduce speed and stay extremely alert.",
+            "Moderate": "🔶 Moderate risk detected. Be attentive and watch for wildlife near the road, especially around forest areas.",
+            "Low": "🟢 Low risk based on your selected input. Stay alert and follow local signage.",
+            "Very Low": "🟦 Very low collision risk predicted for this time and location. Drive with normal caution.",
+        }
+        st.info(advice.get(label, "Stay alert and follow local signage."))
+
+        # -----------------------------------------
+        # Show map centered on selected location
+        # -----------------------------------------
+        st.subheader("Prediction Location on Map")
+
+        loc_df = df[(df["County"] == county) & (df["Municipality"] == municipality)].dropna(
+            subset=["Lat_WGS84", "Long_WGS84"]
+        )
+
+        if not loc_df.empty:
+            map_lat = loc_df["Lat_WGS84"].mean()
+            map_lon = loc_df["Long_WGS84"].mean()
+        else:
+            map_lat, map_lon = 62.0, 15.0  # fallback center
+
+        fig = go.Figure(go.Scattermapbox(
+            lat=[map_lat],
+            lon=[map_lon],
+            mode='markers',
+            marker=go.scattermapbox.Marker(
+                size=18,
+                color=(
+                    'darkred' if label == "Very High" else
+                    'red' if label == "High" else
+                    'orange' if label == "Moderate" else
+                    'green' if label == "Low" else
+                    'blue'
+                )
+            ),
+            text=f"{label} risk<br>Species: {species}<br>Time: {hour}:00<br>Score: {adjusted_score:.2f}",
+            hoverinfo='text'
+        ))
+
+        fig.update_layout(
+            mapbox_style="open-street-map",
+            mapbox_zoom=7,
+            mapbox_center={"lat": map_lat, "lon": map_lon},
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
+            height=500,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # -----------------------------------------
+        # Show feature vector values and probabilities
+        # -----------------------------------------
+        with st.expander("View top influential features"):
+            st.write("These are the features that had the highest values in your prediction vector:")
+            nonzero = X.select_dtypes(include="number").iloc[0]
+            nonzero = nonzero[nonzero != 0].sort_values(ascending=False).head(10)
+            st.write(nonzero.to_frame("value"))
+
+            if proba is not None:
+                st.markdown("**Prediction probabilities:**")
+                st.write(proba)
+
+
+# Allow direct run
+if __name__ == "__main__":
+    run()

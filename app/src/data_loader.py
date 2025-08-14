@@ -1,25 +1,43 @@
+"""
+data_loader.py
+
+Loads the cleaned wildlife collision dataset from either a remote GitHub URL 
+or a local CSV file. Handles basic cleaning of column names, data types, 
+and extracts temporal features from timestamps.
+
+Used throughout the app to provide consistent access to data.
+"""
+
 import os
 import pandas as pd
 from dotenv import load_dotenv
-load_dotenv()
 
-print("🔍 CLEAN_DATA_URL:", os.getenv("CLEAN_DATA_URL"))
+# Load environment variables from .env (if any)
+load_dotenv()
 
 DEFAULT_LOCAL_PATH = "data/cleaned_data.csv"
 
 def load_clean_data(encoding="latin1"):
     """
-    Loads the dataset from URL in CLEAN_DATA_URL if provided, otherwise from local path.
+    Loads the cleaned collision dataset.
+    
+    - Tries to load from CLEAN_DATA_URL (if set), otherwise from local file.
+    - Strips column names and certain string columns (County, Municipality, Species)
+    - Parses 'Time' column into derived features: Year, Month, Hour, Day_of_Year, etc.
+    
+    Returns:
+        pd.DataFrame: Cleaned dataset ready for analysis or prediction.
     """
     clean_data_url = os.getenv("CLEAN_DATA_URL")
 
     try:
+        # Load data
         if clean_data_url:
             df = pd.read_csv(clean_data_url, encoding=encoding)
         else:
             df = pd.read_csv(DEFAULT_LOCAL_PATH, encoding=encoding)
-        
-        # 🧼 Rensa kolumnnamn och strängvärden
+
+        # Clean column names and string values
         df.columns = df.columns.str.strip()
         for col in ["County", "Municipality", "Species"]:
             if col in df.columns:
@@ -27,17 +45,16 @@ def load_clean_data(encoding="latin1"):
 
     except pd.errors.ParserError as e:
         raise RuntimeError(
-            "Kunde inte läsa CSV-filen. Kontrollera att URL:en pekar på en rå "
-            "nedladdning (inte en HTML-sida) och att avgränsare/encoding stämmer."
+            "Could not parse CSV file. Make sure the URL is a raw CSV and the encoding/delimiter is correct."
         ) from e
     except Exception as e:
         where = "CLEAN_DATA_URL" if clean_data_url else DEFAULT_LOCAL_PATH
-        raise RuntimeError(f"Misslyckades att ladda data från: {where}") from e
+        raise RuntimeError(f"Failed to load data from: {where}") from e
 
     if df.empty:
-        raise RuntimeError("CSV lästes in men är tom. Kontrollera källfilen.")
+        raise RuntimeError("CSV file loaded but is empty. Check the data source.")
 
-    # 💡 Extrahera datumkomponenter från 'Time'
+    # Parse and extract time features
     if "Time" in df.columns:
         df["Time"] = pd.to_datetime(df["Time"], errors="coerce")
 
