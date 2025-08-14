@@ -31,6 +31,10 @@ Wildlife-vehicle collisions are a serious issue in Sweden, particularly in fores
 - ✅ **Explainable AI**: expandable section showing feature values & raw probabilities
 - ✅ **Tested pipeline** with automated unit tests for key functionality
 
+![Prediction Page Screenshot](images/predict_page.png)
+
+![Prediction Page Result Screenshot](images/predict_result.png)
+
 ---
 
 ## Folder Structure
@@ -108,6 +112,8 @@ The user selects:
 | Baseline (Dummy)   | 41%      | 0.00     |
 | Final Model (RF)   | 83%      | 0.82     |
 
+![Classification Report and Confusion Matrix](images/model.png)
+
 ---
 
 ## Hypotheses
@@ -121,6 +127,8 @@ The following hypotheses were formulated and validated using visual analytics:
 
 ### Hypothesis 3: Certain counties report more collisions consistently
 - Värmland, Uppsala, and Jämtland stand out across years
+
+![Moose Collisions per Month](images/moose_collisions.png)
 
 ---
 
