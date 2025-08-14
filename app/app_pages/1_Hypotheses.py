@@ -1,29 +1,37 @@
 import streamlit as st
 
 def run():
-    st.title("Project Hypotheses")
+    """
+    Displays the main project hypotheses that guide both the data analysis and 
+    machine learning model. Each hypothesis is motivated by ecological and traffic factors.
+    """
+    st.title("📌 Project Hypotheses")
 
     st.markdown("""
-### Hypothesis 1  
-**Moose collision rates increase during autumn months (September–November).**
-
-*Rationale:* Moose are more active during mating season, increasing road crossings and collision risk.
+This page presents the **main hypotheses** that shaped the exploratory data analysis (EDA) and model development.  
+Each hypothesis is rooted in either ecological behavior or traffic-related assumptions.
 
 ---
 
-### Hypothesis 2  
-**Wildlife collisions are more common at dawn and dusk.**
-
-*Rationale:* Many animals are crepuscular (active at dawn/dusk), which aligns with times of reduced visibility for drivers.
-
----
-
-### Hypothesis 3  
-**Certain counties experience more wildlife collisions regardless of time of year.**
-
-*Rationale:* Geographic and environmental differences (e.g. forest coverage, traffic density) may result in consistent regional risk patterns.
+### 🦌 Hypothesis 1: Moose collisions increase during autumn  
+**Statement:** Moose collision rates increase during autumn months (September–November).  
+**Rationale:** Moose are more active during mating season in the fall, which increases road crossings and collision risk.
 
 ---
 
-These hypotheses guide the analysis and prediction strategy in the dashboard.
+### 🌅 Hypothesis 2: Collisions are more common at dawn and dusk  
+**Statement:** Wildlife collisions occur more frequently during early morning and evening hours.  
+**Rationale:** Many wild animals are crepuscular (active at dawn/dusk), which overlaps with times of low driver visibility.
+
+---
+
+### 🗺️ Hypothesis 3: Certain counties report consistently high collision rates  
+**Statement:** Some counties have higher wildlife collision rates regardless of season or time.  
+**Rationale:** Geographic and environmental factors like forest density, road placement, or animal population could cause persistent risk patterns.
+
+---
+
+These hypotheses serve as the foundation for both the **EDA page** and the **prediction model**.
+
+*See the EDA page for visual analysis supporting or refuting each hypothesis.*
 """)
