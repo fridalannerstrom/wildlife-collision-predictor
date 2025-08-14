@@ -14,6 +14,14 @@ from src.predictor import (
 from src.data_loader import load_clean_data
 
 
+def adjust_score(score: float) -> float:
+    """
+    Apply a non-linear adjustment to model score to reduce overconfidence
+    and spread out predicted risk levels more realistically.
+    """
+    return score ** 2.5  # tweak this if needed
+
+
 def run():
     """
     Streamlit page: Wildlife Collision Risk Prediction
@@ -46,24 +54,13 @@ def run():
     st.subheader("Step 2: Select Time & Species")
     col1, col2 = st.columns(2)
     with col1:
-        month = st.selectbox(
-            "Month",
-            list(range(1, 13)),
-            index=datetime.now().month - 1,
-            help="Choose the month of travel."
-        )
+        month = st.selectbox("Month", list(range(1, 13)), index=datetime.now().month - 1)
     with col2:
-        hour = st.slider(
-            "Hour of Day",
-            0, 23,
-            datetime.now().hour,
-            help="Choose the approximate hour."
-        )
+        hour = st.slider("Hour of Day", 0, 23, datetime.now().hour)
 
     species = st.selectbox(
         "Species",
-        ["All species"] + [s for s in species_list if s != "All species"],
-        help="Optionally filter by specific species."
+        ["All species"] + [s for s in species_list if s != "All species"]
     )
 
     # -----------------------------------------
@@ -83,16 +80,17 @@ def run():
             )
 
             # Run prediction
-            score, label, proba = predict_proba_label(X)
+            score, _, proba = predict_proba_label(X)
+            adjusted_score = adjust_score(score)
 
-        # Risk level thresholds (more conservative)
-        if score >= 0.92:
+        # Use adjusted score for final label
+        if adjusted_score >= 0.92:
             label = "Very High"
-        elif score >= 0.75:
+        elif adjusted_score >= 0.75:
             label = "High"
-        elif score >= 0.55:
+        elif adjusted_score >= 0.55:
             label = "Moderate"
-        elif score >= 0.35:
+        elif adjusted_score >= 0.35:
             label = "Low"
         else:
             label = "Very Low"
@@ -101,74 +99,8 @@ def run():
         # Display result + safety advice
         # -----------------------------------------
         st.subheader("Result")
-        st.metric("Risk Level", label, delta=f"score: {score:.2f}")
+        st.metric("Risk Level", label, delta=f"adjusted: {adjusted_score:.2f}")
+        st.caption(f"⚙️ Raw model score: {score:.2f}")
 
         advice = {
-            "Very High": "🚨 Very high risk – extreme caution required!",
-            "High":      "⚠️ High risk – slow down, increase distance and stay alert near roadsides.",
-            "Moderate":  "🔶 Moderate risk – be extra careful at dusk/dawn and near forest crossings.",
-            "Low":       "🟢 Low risk – follow signage and drive with normal attention.",
-            "Very Low":  "🟦 Very low risk – low probability of collision in this area/time.",
-        }
-        st.info(advice.get(label, "Stay alert and follow local signage."))
-
-        # -----------------------------------------
-        # Show map centered on selected location
-        # -----------------------------------------
-        st.subheader("Prediction Location on Map")
-
-        loc_df = df[(df["County"] == county) & (df["Municipality"] == municipality)].dropna(
-            subset=["Lat_WGS84", "Long_WGS84"]
-        )
-
-        if not loc_df.empty:
-            map_lat = loc_df["Lat_WGS84"].mean()
-            map_lon = loc_df["Long_WGS84"].mean()
-        else:
-            map_lat, map_lon = 62.0, 15.0  # fallback center
-
-        fig = go.Figure(go.Scattermapbox(
-            lat=[map_lat],
-            lon=[map_lon],
-            mode='markers',
-            marker=go.scattermapbox.Marker(
-                size=18,
-                color=(
-                    'darkred' if label == "Very High" else
-                    'red' if label == "High" else
-                    'orange' if label == "Moderate" else
-                    'green' if label == "Low" else
-                    'blue'
-                )
-            ),
-            text=f"{label} risk<br>Species: {species}<br>Time: {hour}:00<br>Score: {score:.2f}",
-            hoverinfo='text'
-        ))
-
-        fig.update_layout(
-            mapbox_style="open-street-map",
-            mapbox_zoom=7,
-            mapbox_center={"lat": map_lat, "lon": map_lon},
-            margin={"r": 0, "t": 0, "l": 0, "b": 0},
-            height=500,
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-        # -----------------------------------------
-        # Show feature vector values and probabilities
-        # -----------------------------------------
-        with st.expander("View top influential features"):
-            st.write("These are the features that had the highest values in your prediction vector:")
-            nonzero = X.select_dtypes(include="number").iloc[0]
-            nonzero = nonzero[nonzero != 0].sort_values(ascending=False).head(10)
-            st.write(nonzero.to_frame("value"))
-
-            if proba is not None:
-                st.markdown("**Prediction probabilities:**")
-                st.write(proba)
-
-
-# Allow direct run
-if __name__ == "__main__":
-    run()
+            "Very High": "🚨 Very high risk – avoid t

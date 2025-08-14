@@ -139,13 +139,11 @@ def predict_proba_label(X: pd.DataFrame):
         proba = model.predict_proba(X)
         if proba.shape[1] == 2:
             score = float(proba[0, 1])
-            label = "High" if score >= 0.66 else ("Medium" if score >= 0.33 else "Low")
-            return score, label, proba
+            return score, None, proba
         else:
             idx = int(np.argmax(proba[0]))
             score = float(proba[0, idx])
-            label = str(getattr(model, "classes_", [])[idx]) if hasattr(model, "classes_") else f"class_{idx}"
-            return score, label, proba
+            return score, None, proba
     else:
         y = model.predict(X)
         label = str(y[0])
