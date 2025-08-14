@@ -4,7 +4,7 @@
 ## 🌟 Overview
 This Streamlit-powered machine learning app predicts **wildlife collision risk** on Swedish roads based on:
 - Location (county + municipality)
-- Time (month, hour, weekday)
+- Time (month, hour)
 - Animal species
 
 The app outputs a **five-tier risk level**, color-coded for clarity, and displays the selected location on an interactive map. It also includes an **explainable AI panel**, interactive EDA visualizations, and a comprehensive model insights section.
@@ -12,17 +12,16 @@ The app outputs a **five-tier risk level**, color-coded for clarity, and display
 ---
 
 ## 💡 Motivation
-Wildlife-vehicle collisions are a serious issue in Sweden, particularly in forested regions like Värmland. This project was built to:
+Wildlife-vehicle collisions are a serious issue in Sweden, particularly in forested regions. This project was built to:
 - Explore real collision patterns in Sweden
 - Provide practical insights to drivers, municipalities, and insurers
 - Showcase a real-world ML application that informs public safety and conservation
-- Build a professional-grade portfolio project that meets Code Institute Distinction criteria
 
 ---
 
 ## 🔍 Features
 - ✅ **Cascading dropdowns**: County → Municipality (based on cleaned data mapping)
-- ✅ **Time-based input**: Month, Hour, Weekday
+- ✅ **Time-based input**: Month, Hour
 - ✅ **Species filtering**: Moose, deer, boar, etc.
 - ✅ **Five-tier risk classification**: Very Low → Very High
 - ✅ **Color-coded advice box** based on predicted risk
@@ -38,8 +37,7 @@ Wildlife-vehicle collisions are a serious issue in Sweden, particularly in fores
 ├── app_pages/              # Streamlit pages (EDA, Predict, Model Insights, Hypotheses)
 ├── src/                    # Core logic
 │   ├── predictor.py        # Model loading, prediction, feature construction
-│   ├── data_loader.py      # Data reading and preprocessing
-│   └── utils.py            # (Planned) for shared helpers
+│   └── data_loader.py      # Data reading and preprocessing
 ├── model/                  # Trained model + engineered columns
 ├── data/                   # Cleaned data (excluded from GitHub)
 ├── notebooks/              # Jupyter Notebooks for EDA, cleaning, modeling
@@ -55,8 +53,10 @@ Wildlife-vehicle collisions are a serious issue in Sweden, particularly in fores
 ### 1. User Input
 The user selects:
 - A *county* and *municipality*
-- Month, Hour, and Weekday
+- Month and hour
 - An optional species (e.g. Moose)
+
+⚠️ Although weekday was initially considered as a feature, it was removed from the final model. The reasoning is simple: wildlife behavior doesn’t change depending on whether it’s a Monday or a Saturday. What truly affects collision risk are natural rhythms like time of day and seasonal patterns — not human constructs like weekdays. Including weekday added noise without contributing to predictive accuracy.
 
 ### 2. Feature Vector Construction
 - Features are combined into a one-row `DataFrame`
@@ -67,10 +67,10 @@ The user selects:
 - Score is adjusted using a power curve (`score ** 2.5`) to reduce overconfidence
 - Score is mapped to one of five risk levels:
 ```
-[0.00–0.35)   = Very Low
-[0.35–0.55)   = Low
-[0.55–0.75)   = Moderate
-[0.75–0.92)   = High
+[0.00–0.35]   = Very Low
+[0.35–0.55]   = Low
+[0.55–0.75]   = Moderate
+[0.75–0.92]   = High
 [0.92–1.00]   = Very High
 ```
 
@@ -89,7 +89,7 @@ The user selects:
 
 ### 🤗 Features
 - **Categorical:** County, Municipality, Species, Weekday
-- **Temporal:** Month, Hour, Day of Year
+- **Temporal:** Month, Hour
 - **Spatial:** Latitude and Longitude
 
 ### ⚖️ Model Pipeline
