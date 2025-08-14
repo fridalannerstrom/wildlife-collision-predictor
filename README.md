@@ -675,3 +675,87 @@ While building the model, I ran into a number of data-related issues that had to
 #### ✅ Final Outcome
 
 The final model is a robust Random Forest classifier that takes raw input features and outputs a probability score for wildlife collision risk. The model was exported as a pipeline (`model.pkl`) and integrated directly into the Streamlit application for real-time prediction.
+
+# Test Suite Documentation
+
+This test suite verifies the functionality of key components in the Wildlife Collision Predictor project.  
+All tests are written with **pytest** and are designed to ensure data integrity, correct feature construction, and proper function outputs.
+
+---
+
+## **Test Files Overview**
+
+### 1. `tests/test_data_loader.py`
+**Purpose:**  
+Verifies that the cleaned dataset loads correctly and contains the expected structure.
+
+**Test:**
+- **`test_load_clean_data_returns_dataframe`**
+  - Confirms that `load_clean_data()`:
+    - Returns a `pandas.DataFrame`
+    - Is **not empty**
+    - Contains the `"County"` column (essential for predictions and dropdowns)
+
+---
+
+### 2. `tests/test_predictor_municipalities.py`
+**Purpose:**  
+Validates that municipalities are correctly retrieved for a given county.
+
+**Test:**
+- **`test_get_municipalities_for_known_county`**
+  - Loads unique values (`counties`, `species`, and county-to-municipality mapping)
+  - Picks the first available county
+  - Calls `get_municipalities_for_county(county)` and checks:
+    - The return value is a list
+    - The list contains **at least one municipality**
+
+---
+
+### 3. `tests/test_predictor.py`
+**Purpose:**  
+Ensures that the ML prediction pipeline receives correct inputs and produces outputs in the expected format.
+
+**Tests:**
+- **`test_build_feature_row_has_expected_raw_columns`**
+  - Verifies that `build_feature_row()` creates a DataFrame with exactly the expected **raw input columns** (before encoding).
+
+- **`test_model_columns_look_engineered`**
+  - Confirms that `load_model_columns()` returns the **engineered feature names** from the trained model,  
+    including both numeric (`num_`) and categorical (`cat_`) prefixed features.
+
+- **`test_predict_proba_label_output_format`**
+  - Runs a smoke test on `predict_proba_label()` to ensure:
+    - `score` (if returned) is a `float`
+    - `label` (if returned) is a `str` and matches allowed label values
+    - `proba` (if returned) is a valid array-like object with at least one probability per row
+
+---
+
+## **How to Run the Tests**
+
+1. Install required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Run the full test suite:
+   ```bash
+   pytest
+   ```
+
+3. (Optional) Run with verbose output:
+   ```bash
+   pytest -v
+   ```
+
+---
+
+## **Notes**
+- These tests assume that:
+  - A trained model and its column definitions are present in the `model/` directory  
+    **OR** will be automatically downloaded via the functions in `predictor.py`.
+  - The cleaned dataset can be loaded successfully via `load_clean_data()`.
+- If the model or dataset is missing, some tests may fail until those files are available.
+
+---
