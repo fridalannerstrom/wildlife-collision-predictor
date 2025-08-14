@@ -1,3 +1,11 @@
+"""
+predictor.py
+
+Handles loading of the trained ML model and performing predictions
+based on input features. Also includes helper functions to load unique values
+(counties, species, municipalities) from the cleaned dataset for use in dropdowns.
+"""
+
 import os
 import pickle
 import joblib
@@ -6,20 +14,22 @@ import pandas as pd
 from urllib.request import urlretrieve
 from src.data_loader import load_clean_data
 
-# ---- Sökvägar ----
-MODEL_PATH = os.path.join("model", "model.pkl.xz")  # komprimerad modell
+# ------------------------------------------------------
+# Paths to model files (local and GitHub fallback)
+# ------------------------------------------------------
+MODEL_PATH = os.path.join("model", "model.pkl.xz")  # Compressed model file
 COLUMNS_PATH = os.path.join("model", "model_columns.pkl")
 
-# ---- URL:er till dina GitHub Release-filer ----
 MODEL_URL = "https://github.com/fridalannerstrom/wildlife-collision-predictor/releases/download/model/model.pkl"
 COLUMNS_URL = "https://github.com/fridalannerstrom/wildlife-collision-predictor/releases/download/model/model_columns.pkl"
-
 
 _model = None
 _model_cols = None
 _unique_values_cache = None
 
-# ---- Ladda modell från disk eller GitHub ----
+# ------------------------------------------------------
+# Helper: Download model file from GitHub if missing
+# ------------------------------------------------------
 def _download_if_missing(path: str, url: str):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if not os.path.exists(path):
@@ -27,6 +37,9 @@ def _download_if_missing(path: str, url: str):
         urlretrieve(url, path)
         print(f"✅ Saved to {path}")
 
+# ------------------------------------------------------
+# Load model from local or GitHub
+# ------------------------------------------------------
 def load_model():
     global _model
     if _model is None:
@@ -42,31 +55,38 @@ def load_model_columns():
             _model_cols = pickle.load(f)
     return _model_cols
 
-# ---- Läs unika värden från datan ----
+# ------------------------------------------------------
+# Load unique values for dropdowns (cached)
+# ------------------------------------------------------
 def load_unique_values():
+    """
+    Extract unique counties, species, and a mapping of municipalities from the cleaned data.
+    Useful for populating dropdowns in the UI.
+    """
     global _unique_values_cache
     if _unique_values_cache is None:
         df = load_clean_data()
-        
-        # Konvertera datumfält om det behövs
+
+        # Ensure date fields exist
         if "Time" in df.columns:
             df["Time"] = pd.to_datetime(df["Time"], errors="coerce")
             if "Month" not in df.columns:
                 df["Month"] = df["Time"].dt.month
             if "Year" not in df.columns:
                 df["Year"] = df["Time"].dt.year
-        
+
+        # Validate required columns
         required = ["County", "Municipality", "Species"]
         missing = [c for c in required if c not in df.columns]
         if missing:
-            raise ValueError(f"Saknade kolumner i cleaned_data.csv: {missing}")
+            raise ValueError(f"Missing columns in cleaned_data.csv: {missing}")
 
-        counties = sorted([c for c in df["County"].dropna().unique().tolist() if str(c).strip()])
-        species = sorted([s for s in df["Species"].dropna().unique().tolist() if str(s).strip()])
+        counties = sorted([c for c in df["County"].dropna().unique() if str(c).strip()])
+        species = sorted([s for s in df["Species"].dropna().unique() if str(s).strip()])
 
         county_to_munis = {}
         for c in counties:
-            munis = df.loc[df["County"] == c, "Municipality"].dropna().unique().tolist()
+            munis = df.loc[df["County"] == c, "Municipality"].dropna().unique()
             munis = sorted([m for m in munis if str(m).strip()])
             county_to_munis[c] = munis
 
@@ -78,18 +98,15 @@ def load_unique_values():
     return _unique_values_cache
 
 def get_municipalities_for_county(county: str) -> list:
+    """
+    Given a county, return the list of municipalities (from cache).
+    """
     uv = load_unique_values()
     return uv["county_to_munis"].get(county, [])
 
-# ---- Matcha modellens features ----
-def _one_hot_align(frame: pd.DataFrame, model_cols: list) -> pd.DataFrame:
-    X = frame.copy()
-    for c in model_cols:
-        if c not in X.columns:
-            X[c] = 0
-    return X[model_cols]
-
-# ---- Skapa feature-rad till modellen ----
+# ------------------------------------------------------
+# Build input row from user selections
+# ------------------------------------------------------
 def build_feature_row(
     year: int,
     month: int,
@@ -102,9 +119,13 @@ def build_feature_row(
     day_of_year: int | None = None,
     weekday: str | None = None,
 ) -> pd.DataFrame:
+    """
+    Construct a single-row DataFrame with features expected by the trained model.
+    This raw input will be processed by the model pipeline (no need to encode).
+    """
     import calendar
 
-    # Sätt defaultvärden om saknas
+    # Fallback defaults
     if municipality is None:
         municipality = "Unknown"
     if lat_wgs84 is None:
@@ -116,8 +137,8 @@ def build_feature_row(
     if weekday is None:
         weekday = calendar.day_name[pd.Timestamp(year=year, month=month, day=1).weekday()]
 
-    # Skapa dataframe med originalfeatures
-    df = pd.DataFrame({
+    # Create DataFrame
+    return pd.DataFrame({
         "Year": [year],
         "Month": [month],
         "Hour": [hour],
@@ -130,16 +151,26 @@ def build_feature_row(
         "Weekday": [weekday],
     })
 
-    return df
-
-# ---- Kör prediktion ----
+# ------------------------------------------------------
+# Make prediction and return probability and label
+# ------------------------------------------------------
 def predict_proba_label(X: pd.DataFrame):
+    """
+    Predict collision probability using the trained model.
+    Returns:
+        - score (float): probability of collision (if applicable)
+        - label (str): only used in non-probabilistic models
+        - proba (ndarray): full probability array (or None)
+    """
     model = load_model()
     if hasattr(model, "predict_proba"):
         proba = model.predict_proba(X)
+
+        # Binary classification
         if proba.shape[1] == 2:
             score = float(proba[0, 1])
             return score, None, proba
+        # Multiclass
         else:
             idx = int(np.argmax(proba[0]))
             score = float(proba[0, idx])
