@@ -1,14 +1,14 @@
-import sys
 import os
+import sys
+import pytest
 
-# Import the functions to test
+# Add the 'app' directory to sys.path so we can import from src.*
+APP_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app"))
+if APP_PATH not in sys.path:
+    sys.path.insert(0, APP_PATH)
+
+# Import functions to test
 from src.predictor import get_municipalities_for_county, load_unique_values
-
-# Add the "app" directory to the Python path
-app_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "app")
-)
-sys.path.insert(0, app_path)
 
 
 def test_get_municipalities_for_known_county():
