@@ -24,7 +24,7 @@ COLUMNS_PATH = os.path.join("model", "model_columns.pkl")
 
 MODEL_URL = (
     "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
-    "releases/download/model/model.pkl"
+    "releases/download/model/model.pkl.xz"
 )
 COLUMNS_URL = (
     "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
@@ -162,27 +162,29 @@ def build_feature_row(
 # ------------------------------------------------------
 
 
-def predict_proba_label(X: pd.DataFrame):
+def predict_proba_label(X: pd.DataFrame, model):
     """
     Predict collision probability using the trained model.
 
+    Args:
+        X (pd.DataFrame): input features
+        model: preloaded model object
+
     Returns:
         - score (float): probability of collision (if applicable)
-        - label (str): only used in non-probabilistic models
-        - proba (ndarray): full probability array (or None)
+        - label (str): label if no proba available
+        - proba (dict or None): class probabilities
     """
-    model = load_model()
-
     if hasattr(model, "predict_proba"):
         proba = model.predict_proba(X)
 
         if proba.shape[1] == 2:
             score = float(proba[0, 1])
-            return score, None, proba
+            return score, None, dict(enumerate(proba[0]))
         else:
             idx = int(np.argmax(proba[0]))
             score = float(proba[0, idx])
-            return score, None, proba
+            return score, None, dict(enumerate(proba[0]))
 
     else:
         y = model.predict(X)

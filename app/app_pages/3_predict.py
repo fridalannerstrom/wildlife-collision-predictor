@@ -9,6 +9,7 @@ from src.predictor import (
     get_municipalities_for_county,
     build_feature_row,
     predict_proba_label,
+    load_model,
 )
 from src.data_loader import load_clean_data
 
@@ -82,19 +83,38 @@ def run():
     # -----------------------------------------
     if st.button("Predict Risk"):
         with st.spinner("Predicting..."):
-            # Build model input features
-            X = build_feature_row(
-                year=datetime.now().year,
-                month=month,
-                hour=hour,
-                county=county,
-                species=species,
-                municipality=municipality,
-                day_of_year=datetime.now().timetuple().tm_yday,
-            )
+            try:
+                st.write("🔍 Step 1: Building feature row...")
+                now = datetime.now()
+                year = now.year
+                day_of_year = now.timetuple().tm_yday
+                weekday = now.strftime('%A')
+
+                X = build_feature_row(
+                    year=year,
+                    month=month,
+                    hour=hour,
+                    county=county,
+                    species=species,
+                    municipality=municipality,
+                    day_of_year=day_of_year,
+                    weekday=weekday,
+                )
+                st.write("✅ Feature row built:", X)
+
+                st.write("🔍 Step 2: Loading model...")
+                model = load_model()
+                st.write("✅ Model loaded")
+
+                st.write("🔍 Step 3: Running prediction...")
+                score, label, proba = predict_proba_label(X, model)
+                st.success("✅ Prediction complete")
+                st.write(f"📊 Predicted risk score: {score}")
+            except Exception as e:
+                st.error(f"❌ An error occurred: {e}")
 
             # Run prediction
-            score, _, proba = predict_proba_label(X)
+            score, _, proba = predict_proba_label(X, model)
             adjusted_score = adjust_score(score)
 
         # Use adjusted score for final label
