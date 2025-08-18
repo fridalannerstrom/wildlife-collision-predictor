@@ -10,6 +10,7 @@ from src.predictor import (
     build_feature_row,
     predict_proba_label,
     load_model,
+    load_model_columns,
 )
 from src.data_loader import load_clean_data
 
@@ -19,17 +20,10 @@ def adjust_score(score: float) -> float:
     Apply a non-linear adjustment to model score to reduce overconfidence
     and spread out predicted risk levels more realistically.
     """
-    return score ** 2.5 if score is not None else 0
+    return score ** 2.5
 
 
 def run():
-    """
-    Wildlife Collision Risk Prediction Page
-
-    User selects location and time, then receives a predicted wildlife
-    collision risk level with map and safety advice.
-    """
-
     st.title("Wildlife Collision Risk Prediction")
 
     st.markdown(
@@ -42,17 +36,11 @@ def run():
     counties = uv["counties"]
     species_list = uv["species"]
 
-    # ---------------------
-    # Step 1: Location
-    # ---------------------
     st.subheader("Step 1: Select Location")
-    county = st.selectbox("County", counties)
+    county = st.selectbox("County", counties, help="Choose the county where you plan to travel.")
     munis = get_municipalities_for_county(county)
-    municipality = st.selectbox("Municipality", munis)
+    municipality = st.selectbox("Municipality", munis, help="Select a specific municipality in the county.")
 
-    # ---------------------
-    # Step 2: Time & Species
-    # ---------------------
     st.subheader("Step 2: Select Time & Species")
     col1, col2 = st.columns(2)
     with col1:
@@ -60,17 +48,12 @@ def run():
     with col2:
         hour = st.slider("Hour of Day", 0, 23, datetime.now().hour)
 
-    species = st.selectbox(
-        "Species",
-        ["All species"] + [s for s in species_list if s != "All species"]
-    )
+    species = st.selectbox("Species", ["All species"] + [s for s in species_list if s != "All species"])
 
-    # ---------------------
-    # Step 3: Predict Risk
-    # ---------------------
     if st.button("Predict Risk"):
-        with st.spinner("Running prediction..."):
+        with st.spinner("Predicting..."):
             try:
+                st.write("🔍 Step 1: Building feature row...")
                 now = datetime.now()
                 year = now.year
                 day_of_year = now.timetuple().tm_yday
@@ -86,61 +69,55 @@ def run():
                     day_of_year=day_of_year,
                     weekday=weekday,
                 )
-                st.write("✅ Feature vector:", X)
+                st.write("✅ Feature row built:", X)
 
+                st.write("🔍 Step 2: Loading model...")
                 model = load_model()
+                model_columns = load_model_columns()  # 👈 hämta förväntade kolumner
+                st.write("✅ Model loaded")
+                st.write("🧪 Model expects these input columns:", model_columns)
+
+                st.write("🔍 Step 3: Running prediction...")
                 score, label, proba = predict_proba_label(X, model)
+                st.success("✅ Prediction complete")
+                st.write(f"📊 Predicted risk score: {score}")
 
-                if score is not None:
-                    adjusted_score = adjust_score(score)
+                adjusted_score = adjust_score(score)
 
-                    if adjusted_score >= 0.92:
-                        label = "Very High"
-                    elif adjusted_score >= 0.75:
-                        label = "High"
-                    elif adjusted_score >= 0.55:
-                        label = "Moderate"
-                    elif adjusted_score >= 0.35:
-                        label = "Low"
-                    else:
-                        label = "Very Low"
-
-                    st.subheader("Result")
-                    st.metric("Risk Level", label, delta=f"adjusted: {adjusted_score:.2f}")
-                    st.caption(f"⚙️ Raw model score: {score:.2f}")
-
-                    advice = {
-                        "Very High": (
-                            "🚨 Very high risk. Avoid travel or proceed with extreme caution."
-                        ),
-                        "High": (
-                            "⚠️ High risk. Reduce speed and stay alert."
-                        ),
-                        "Moderate": (
-                            "🔶 Moderate risk. Be attentive, especially in forest areas."
-                        ),
-                        "Low": (
-                            "🟢 Low risk. Stay alert and follow road signs."
-                        ),
-                        "Very Low": (
-                            "🟦 Very low risk. Drive with normal caution."
-                        ),
-                    }
-                    st.info(advice.get(label, "Stay alert and follow local signage."))
-
+                if adjusted_score >= 0.92:
+                    label = "Very High"
+                elif adjusted_score >= 0.75:
+                    label = "High"
+                elif adjusted_score >= 0.55:
+                    label = "Moderate"
+                elif adjusted_score >= 0.35:
+                    label = "Low"
                 else:
-                    st.warning("Model returned no probability score.")
+                    label = "Very Low"
 
-                # ---------------------
-                # Map
-                # ---------------------
+                st.subheader("Result")
+                st.metric("Risk Level", label, delta=f"adjusted: {adjusted_score:.2f}")
+                st.caption(f"⚙️ Raw model score: {score:.2f}")
+
+                advice = {
+                    "Very High": "🚨 Very high risk predicted for this time and location. Avoid travel if possible or proceed with extreme caution.",
+                    "High": "⚠️ High risk of wildlife collision at the selected time and place. Reduce speed and stay extremely alert.",
+                    "Moderate": "🔶 Moderate risk detected. Be attentive and watch for wildlife near the road, especially around forest areas.",
+                    "Low": "🟢 Low risk based on your selected input. Stay alert and follow local signage.",
+                    "Very Low": "🟦 Very low collision risk predicted for this time and location. Drive with normal caution.",
+                }
+                st.info(advice.get(label, "Stay alert and follow local signage."))
+
                 st.subheader("Prediction Location on Map")
-                loc_df = df[
-                    (df["County"] == county) & (df["Municipality"] == municipality)
-                ].dropna(subset=["Lat_WGS84", "Long_WGS84"])
+                loc_df = df[(df["County"] == county) & (df["Municipality"] == municipality)].dropna(
+                    subset=["Lat_WGS84", "Long_WGS84"]
+                )
 
-                map_lat = loc_df["Lat_WGS84"].mean() if not loc_df.empty else 62.0
-                map_lon = loc_df["Long_WGS84"].mean() if not loc_df.empty else 15.0
+                if not loc_df.empty:
+                    map_lat = loc_df["Lat_WGS84"].mean()
+                    map_lon = loc_df["Long_WGS84"].mean()
+                else:
+                    map_lat, map_lon = 62.0, 15.0
 
                 fig = go.Figure(go.Scattermapbox(
                     lat=[map_lat],
@@ -156,8 +133,7 @@ def run():
                             'blue'
                         )
                     ),
-                    text=(f"{label} risk<br>Species: {species}<br>"
-                          f"Time: {hour}:00<br>Score: {adjusted_score:.2f}"),
+                    text=f"{label} risk<br>Species: {species}<br>Time: {hour}:00<br>Score: {adjusted_score:.2f}",
                     hoverinfo='text'
                 ))
 
@@ -171,28 +147,18 @@ def run():
 
                 st.plotly_chart(fig, use_container_width=True)
 
-                # ---------------------
-                # Debug view of features + proba
-                # ---------------------
                 with st.expander("View top influential features"):
-                    st.write(
-                        "These are the top feature values from your input:"
-                    )
+                    st.write("These are the features that had the highest values in your prediction vector:")
                     nonzero = X.select_dtypes(include="number").iloc[0]
-                    nonzero = (
-                        nonzero[nonzero != 0]
-                        .sort_values(ascending=False)
-                        .head(10)
-                    )
+                    nonzero = nonzero[nonzero != 0].sort_values(ascending=False).head(10)
                     st.write(nonzero.to_frame("value"))
 
-                    if isinstance(proba, dict):
+                    if proba is not None:
                         st.markdown("**Prediction probabilities:**")
                         st.write(proba)
 
             except Exception as e:
                 st.error(f"❌ An error occurred: {e}")
-                return
 
 
 if __name__ == "__main__":
