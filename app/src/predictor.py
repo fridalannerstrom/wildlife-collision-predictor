@@ -53,9 +53,18 @@ def _download_if_missing(path: str, url: str):
 @st.cache_resource
 def load_model():
     _download_if_missing(MODEL_PATH, MODEL_URL)
-    with lzma.open(MODEL_PATH, "rb") as f:
-        model = cloudpickle.load(f)
-    return model
+
+    try:
+        with lzma.open(MODEL_PATH, "rb") as f:
+            model = cloudpickle.load(f)
+        return model
+
+    except Exception as e:
+        import traceback
+        st.error(f"❌ Failed to load model: {type(e).__name__}: {e}")
+        st.text("🧵 Full traceback:")
+        st.text(traceback.format_exc())
+        raise e  # optional: for dev mode only
 
 
 @st.cache_resource
