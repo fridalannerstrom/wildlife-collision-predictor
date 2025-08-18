@@ -1,6 +1,7 @@
 import pandas as pd
 import lzma
 import cloudpickle
+import joblib
 from sklearn.ensemble import RandomForestClassifier
 
 # 1. Ladda datan
@@ -20,11 +21,14 @@ y = df["Animal_Outcome"]
 # 5. One-hot encoding av kategoriska kolumner
 X = pd.get_dummies(X)
 
-# 6. Träna modellen
+# 6. Spara kolumnnamn så vi kan återskapa vid prediction
+joblib.dump(list(X.columns), "model/model_columns.pkl")
+
+# 7. Träna modellen
 model = RandomForestClassifier(random_state=42)
 model.fit(X, y)
 
-# 7. Spara modellen komprimerad
+# 8. Spara modellen komprimerad
 with lzma.open("model/model.pkl.xz", "wb") as f:
     cloudpickle.dump(model, f)
 

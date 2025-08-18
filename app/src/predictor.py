@@ -7,21 +7,21 @@ from the cleaned dataset for use in dropdowns.
 """
 
 import os
-import json
+import joblib
 import lzma
+import cloudpickle
 import numpy as np
 import pandas as pd
 import streamlit as st
 from urllib.request import urlretrieve
 from src.data_loader import load_clean_data
-import cloudpickle
 
 # ------------------------------------------------------
 # Paths to model files (local and GitHub fallback)
 # ------------------------------------------------------
 
 MODEL_PATH = os.path.join("model", "model.pkl.xz")
-COLUMNS_PATH = os.path.join("model", "model_columns.json")
+COLUMNS_PATH = os.path.join("model", "model_columns.pkl")
 
 MODEL_URL = (
     "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
@@ -59,8 +59,8 @@ def load_model():
 
 @st.cache_resource
 def load_model_columns():
-    with open(COLUMNS_PATH, "r") as f:
-        return json.load(f)
+    with open(COLUMNS_PATH, "rb") as f:
+        return joblib.load(f)
 
 # ------------------------------------------------------
 # Load unique values for dropdowns (cached)
@@ -68,13 +68,8 @@ def load_model_columns():
 
 @st.cache_resource
 def load_unique_values():
-    """
-    Extract unique counties, species, and a mapping of municipalities
-    from the cleaned data. Useful for populating dropdowns in the UI.
-    """
     df = load_clean_data()
 
-    # Ensure date fields exist
     if "Time" in df.columns:
         df["Time"] = pd.to_datetime(df["Time"], errors="coerce")
         if "Month" not in df.columns:
@@ -82,7 +77,6 @@ def load_unique_values():
         if "Year" not in df.columns:
             df["Year"] = df["Time"].dt.year
 
-    # Validate required columns
     required = ["County", "Municipality", "Species"]
     missing = [c for c in required if c not in df.columns]
     if missing:
@@ -151,21 +145,25 @@ def build_feature_row(
 # Make prediction and return probability and label
 # ------------------------------------------------------
 
-def predict_proba_label(X: pd.DataFrame, model):
+def predict_proba_label(X_raw: pd.DataFrame, model):
     """
-    Predict collision probability using the trained model.
-
-    Args:
-        X (pd.DataFrame): input features
-        model: preloaded model object
-
-    Returns:
-        - score (float): probability of collision (if applicable)
-        - label (str): label if no proba available
-        - proba (dict or None): class probabilities
+    Takes raw input, encodes with dummy vars, aligns to model columns, and predicts.
     """
+    # One-hot encode input
+    X_encoded = pd.get_dummies(X_raw)
+
+    # Load expected column names
+    model_columns = load_model_columns()
+
+    # Align columns
+    for col in model_columns:
+        if col not in X_encoded.columns:
+            X_encoded[col] = 0
+    X_encoded = X_encoded[model_columns]
+
+    # Predict
     if hasattr(model, "predict_proba"):
-        proba = model.predict_proba(X)
+        proba = model.predict_proba(X_encoded)
 
         if proba.shape[1] == 2:
             score = float(proba[0, 1])
@@ -175,6 +173,6 @@ def predict_proba_label(X: pd.DataFrame, model):
             score = float(proba[0, idx])
             return score, None, dict(enumerate(proba[0]))
     else:
-        y = model.predict(X)
+        y = model.predict(X_encoded)
         label = str(y[0])
         return None, label, None
