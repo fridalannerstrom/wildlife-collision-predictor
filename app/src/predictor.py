@@ -14,6 +14,8 @@ import pandas as pd
 import streamlit as st
 from urllib.request import urlretrieve
 from src.data_loader import load_clean_data
+import cloudpickle
+import lzma
 
 # ------------------------------------------------------
 # Paths to model files (local and GitHub fallback)
@@ -51,9 +53,8 @@ def _download_if_missing(path: str, url: str):
 @st.cache_resource
 def load_model():
     _download_if_missing(MODEL_PATH, MODEL_URL)
-    import lzma
     with lzma.open(MODEL_PATH, "rb") as f:
-        model = pickle.load(f)
+        model = cloudpickle.load(f)
     return model
 
 
