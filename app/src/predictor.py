@@ -9,7 +9,6 @@ from the cleaned dataset for use in dropdowns.
 import os
 import joblib
 import lzma
-import cloudpickle
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -21,7 +20,7 @@ from src.data_loader import load_clean_data
 # ------------------------------------------------------
 
 MODEL_PATH = os.path.join("model", "model.pkl.xz")
-COLUMNS_PATH = os.path.join("model", "model_columns.pkl")
+COLUMNS_PATH = os.path.join("model", "model_columns.pkl")  # optional
 
 MODEL_URL = (
     "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
@@ -48,7 +47,7 @@ def load_model():
     _download_if_missing(MODEL_PATH, MODEL_URL)
     try:
         with lzma.open(MODEL_PATH, "rb") as f:
-            model = cloudpickle.load(f)
+            model = joblib.load(f)
         return model
     except Exception as e:
         import traceback

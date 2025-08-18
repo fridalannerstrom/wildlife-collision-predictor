@@ -1,8 +1,7 @@
 import pandas as pd
-import lzma
-import cloudpickle
-import joblib
 from sklearn.ensemble import RandomForestClassifier
+import joblib
+import lzma
 
 # 1. Ladda datan
 df = pd.read_csv("data/cleaned_data.csv")
@@ -15,21 +14,15 @@ df = df.drop(columns=drop_cols, errors="ignore")
 df = df.dropna()
 
 # 4. Separera X och y
-X = df.drop(columns=["Animal_Outcome"])
+X = pd.get_dummies(df.drop(columns=["Animal_Outcome"]))
 y = df["Animal_Outcome"]
 
-# 5. One-hot encoding av kategoriska kolumner
-X = pd.get_dummies(X)
-
-# 6. Spara kolumnnamn så vi kan återskapa vid prediction
-joblib.dump(list(X.columns), "model/model_columns.pkl")
-
-# 7. Träna modellen
+# 5. Träna modellen
 model = RandomForestClassifier(random_state=42)
 model.fit(X, y)
 
-# 8. Spara modellen komprimerad
+# 6. Spara modellen som komprimerad .xz med joblib
 with lzma.open("model/model.pkl.xz", "wb") as f:
-    cloudpickle.dump(model, f)
+    joblib.dump(model, f)
 
 print("✅ Modellen har tränats och sparats som model.pkl.xz!")
