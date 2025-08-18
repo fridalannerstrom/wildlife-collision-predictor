@@ -1,0 +1,4 @@
+*.ipynb
+data/original/
+notebooks/
+__pycache__/
