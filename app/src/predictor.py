@@ -11,13 +11,14 @@ import pickle
 import joblib
 import numpy as np
 import pandas as pd
+import streamlit as st
 from urllib.request import urlretrieve
 from src.data_loader import load_clean_data
-import streamlit as st
 
 # ------------------------------------------------------
 # Paths to model files (local and GitHub fallback)
 # ------------------------------------------------------
+
 MODEL_PATH = os.path.join("model", "model.pkl.xz")
 COLUMNS_PATH = os.path.join("model", "model_columns.pkl")
 
@@ -29,10 +30,6 @@ COLUMNS_URL = (
     "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
     "releases/download/model/model_columns.pkl"
 )
-
-_model = None
-_model_cols = None
-_unique_values_cache = None
 
 # ------------------------------------------------------
 # Helper: Download model file from GitHub if missing
@@ -47,27 +44,21 @@ def _download_if_missing(path: str, url: str):
         print(f"✅ Saved to {path}")
 
 # ------------------------------------------------------
-# Load model from local or GitHub
+# Load model and columns with Streamlit caching
 # ------------------------------------------------------
 
 
 @st.cache_resource
 def load_model():
-    global _model
-    if _model is None:
-        _download_if_missing(MODEL_PATH, MODEL_URL)
-        _model = joblib.load(MODEL_PATH)
-    return _model
+    _download_if_missing(MODEL_PATH, MODEL_URL)
+    return joblib.load(MODEL_PATH)
 
 
 @st.cache_resource
 def load_model_columns():
-    global _model_cols
-    if _model_cols is None:
-        _download_if_missing(COLUMNS_PATH, COLUMNS_URL)
-        with open(COLUMNS_PATH, "rb") as f:
-            _model_cols = pickle.load(f)
-    return _model_cols
+    _download_if_missing(COLUMNS_PATH, COLUMNS_URL)
+    with open(COLUMNS_PATH, "rb") as f:
+        return pickle.load(f)
 
 # ------------------------------------------------------
 # Load unique values for dropdowns (cached)
@@ -80,48 +71,35 @@ def load_unique_values():
     Extract unique counties, species, and a mapping of municipalities
     from the cleaned data. Useful for populating dropdowns in the UI.
     """
-    global _unique_values_cache
-    if _unique_values_cache is None:
-        df = load_clean_data()
+    df = load_clean_data()
 
-        # Ensure date fields exist
-        if "Time" in df.columns:
-            df["Time"] = pd.to_datetime(df["Time"], errors="coerce")
-            if "Month" not in df.columns:
-                df["Month"] = df["Time"].dt.month
-            if "Year" not in df.columns:
-                df["Year"] = df["Time"].dt.year
+    # Ensure date fields exist
+    if "Time" in df.columns:
+        df["Time"] = pd.to_datetime(df["Time"], errors="coerce")
+        if "Month" not in df.columns:
+            df["Month"] = df["Time"].dt.month
+        if "Year" not in df.columns:
+            df["Year"] = df["Time"].dt.year
 
-        # Validate required columns
-        required = ["County", "Municipality", "Species"]
-        missing = [c for c in required if c not in df.columns]
-        if missing:
-            raise ValueError(
-                f"Missing columns in cleaned_data.csv: {missing}"
-            )
+    # Validate required columns
+    required = ["County", "Municipality", "Species"]
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing columns in cleaned_data.csv: {missing}")
 
-        counties = sorted([
-            c for c in df["County"].dropna().unique()
-            if str(c).strip()
-        ])
-        species = sorted([
-            s for s in df["Species"].dropna().unique()
-            if str(s).strip()
-        ])
+    counties = sorted(df["County"].dropna().unique())
+    species = sorted(df["Species"].dropna().unique())
 
-        county_to_munis = {}
-        for c in counties:
-            munis = df.loc[df["County"] == c, "Municipality"]
-            munis = munis.dropna().unique()
-            munis = sorted([m for m in munis if str(m).strip()])
-            county_to_munis[c] = munis
+    county_to_munis = {}
+    for c in counties:
+        munis = df.loc[df["County"] == c, "Municipality"].dropna().unique()
+        county_to_munis[c] = sorted([m for m in munis if str(m).strip()])
 
-        _unique_values_cache = {
-            "counties": counties,
-            "species": species,
-            "county_to_munis": county_to_munis,
-        }
-    return _unique_values_cache
+    return {
+        "counties": [c for c in counties if str(c).strip()],
+        "species": [s for s in species if str(s).strip()],
+        "county_to_munis": county_to_munis,
+    }
 
 
 def get_municipalities_for_county(county: str) -> list:
@@ -155,23 +133,17 @@ def build_feature_row(
     """
     import calendar
 
-    # Fallback defaults
-    if municipality is None:
-        municipality = "Unknown"
-    if lat_wgs84 is None:
-        lat_wgs84 = 60.0
-    if long_wgs84 is None:
-        long_wgs84 = 15.0
+    # Fallbacks
+    municipality = municipality or "Unknown"
+    lat_wgs84 = lat_wgs84 or 60.0
+    long_wgs84 = long_wgs84 or 15.0
     if day_of_year is None:
-        day_of_year = pd.Timestamp(
-            year=year, month=month, day=1
-        ).dayofyear
+        day_of_year = pd.Timestamp(year=year, month=month, day=1).dayofyear
     if weekday is None:
         weekday = calendar.day_name[
             pd.Timestamp(year=year, month=month, day=1).weekday()
         ]
 
-    # Create DataFrame
     return pd.DataFrame({
         "Year": [year],
         "Month": [month],
@@ -200,18 +172,18 @@ def predict_proba_label(X: pd.DataFrame):
         - proba (ndarray): full probability array (or None)
     """
     model = load_model()
+
     if hasattr(model, "predict_proba"):
         proba = model.predict_proba(X)
 
-        # Binary classification
         if proba.shape[1] == 2:
             score = float(proba[0, 1])
             return score, None, proba
-        # Multiclass
         else:
             idx = int(np.argmax(proba[0]))
             score = float(proba[0, idx])
             return score, None, proba
+
     else:
         y = model.predict(X)
         label = str(y[0])
