@@ -20,11 +20,16 @@ from src.data_loader import load_clean_data
 # ------------------------------------------------------
 
 MODEL_PATH = os.path.join("model", "model.pkl.xz")
-COLUMNS_PATH = os.path.join("model", "model_columns.pkl")  # optional
+COLUMNS_PATH = os.path.join("model", "model_columns.pkl") 
 
 MODEL_URL = (
     "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
     "releases/download/model/model.pkl.xz"
+)
+
+MODEL_COLUMNS_URL = (
+    "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
+    "releases/download/model/model_columns.pkl"
 )
 
 # ------------------------------------------------------
@@ -58,6 +63,7 @@ def load_model():
 
 @st.cache_resource
 def load_model_columns():
+    _download_if_missing(COLUMNS_PATH, MODEL_COLUMNS_URL)
     with open(COLUMNS_PATH, "rb") as f:
         return joblib.load(f)
 
