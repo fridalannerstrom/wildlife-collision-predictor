@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from urllib.request import urlretrieve
 from src.data_loader import load_clean_data
+import streamlit as st
 
 # ------------------------------------------------------
 # Paths to model files (local and GitHub fallback)
@@ -50,6 +51,7 @@ def _download_if_missing(path: str, url: str):
 # ------------------------------------------------------
 
 
+@st.cache_resource
 def load_model():
     global _model
     if _model is None:
@@ -58,6 +60,7 @@ def load_model():
     return _model
 
 
+@st.cache_resource
 def load_model_columns():
     global _model_cols
     if _model_cols is None:
@@ -71,6 +74,7 @@ def load_model_columns():
 # ------------------------------------------------------
 
 
+@st.cache_resource
 def load_unique_values():
     """
     Extract unique counties, species, and a mapping of municipalities

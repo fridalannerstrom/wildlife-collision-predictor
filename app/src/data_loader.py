@@ -11,6 +11,7 @@ Used throughout the app to provide consistent access to data.
 import os
 import pandas as pd
 from dotenv import load_dotenv
+import streamlit as st
 
 # Load environment variables from .env (if any)
 load_dotenv()
@@ -18,6 +19,7 @@ load_dotenv()
 DEFAULT_LOCAL_PATH = "data/cleaned_data.csv"
 
 
+@st.cache_data
 def load_clean_data(encoding="utf-8"):
     """
     Loads the cleaned collision dataset.
