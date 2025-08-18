@@ -51,7 +51,10 @@ def _download_if_missing(path: str, url: str):
 @st.cache_resource
 def load_model():
     _download_if_missing(MODEL_PATH, MODEL_URL)
-    return joblib.load(MODEL_PATH)
+    import lzma
+    with lzma.open(MODEL_PATH, "rb") as f:
+        model = pickle.load(f)
+    return model
 
 
 @st.cache_resource
