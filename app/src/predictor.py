@@ -7,36 +7,30 @@ from the cleaned dataset for use in dropdowns.
 """
 
 import os
-import pickle
-import joblib
+import json
+import lzma
 import numpy as np
 import pandas as pd
 import streamlit as st
 from urllib.request import urlretrieve
 from src.data_loader import load_clean_data
 import cloudpickle
-import lzma
 
 # ------------------------------------------------------
 # Paths to model files (local and GitHub fallback)
 # ------------------------------------------------------
 
 MODEL_PATH = os.path.join("model", "model.pkl.xz")
-COLUMNS_PATH = os.path.join("model", "model_columns.pkl")
+COLUMNS_PATH = os.path.join("model", "model_columns.json")
 
 MODEL_URL = (
     "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
     "releases/download/model/model.pkl.xz"
 )
-COLUMNS_URL = (
-    "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
-    "releases/download/model/model_columns.pkl"
-)
 
 # ------------------------------------------------------
 # Helper: Download model file from GitHub if missing
 # ------------------------------------------------------
-
 
 def _download_if_missing(path: str, url: str):
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -49,34 +43,28 @@ def _download_if_missing(path: str, url: str):
 # Load model and columns with Streamlit caching
 # ------------------------------------------------------
 
-
 @st.cache_resource
 def load_model():
     _download_if_missing(MODEL_PATH, MODEL_URL)
-
     try:
         with lzma.open(MODEL_PATH, "rb") as f:
             model = cloudpickle.load(f)
         return model
-
     except Exception as e:
         import traceback
         st.error(f"❌ Failed to load model: {type(e).__name__}: {e}")
         st.text("🧵 Full traceback:")
         st.text(traceback.format_exc())
-        raise e  # optional: for dev mode only
-
+        raise e
 
 @st.cache_resource
 def load_model_columns():
-    _download_if_missing(COLUMNS_PATH, COLUMNS_URL)
-    with open(COLUMNS_PATH, "rb") as f:
-        return pickle.load(f)
+    with open(COLUMNS_PATH, "r") as f:
+        return json.load(f)
 
 # ------------------------------------------------------
 # Load unique values for dropdowns (cached)
 # ------------------------------------------------------
-
 
 @st.cache_resource
 def load_unique_values():
@@ -114,18 +102,13 @@ def load_unique_values():
         "county_to_munis": county_to_munis,
     }
 
-
 def get_municipalities_for_county(county: str) -> list:
-    """
-    Given a county, return the list of municipalities (from cache).
-    """
     uv = load_unique_values()
     return uv["county_to_munis"].get(county, [])
 
 # ------------------------------------------------------
 # Build input row from user selections
 # ------------------------------------------------------
-
 
 def build_feature_row(
     year: int,
@@ -139,14 +122,8 @@ def build_feature_row(
     day_of_year: int | None = None,
     weekday: str | None = None,
 ) -> pd.DataFrame:
-    """
-    Construct a single-row DataFrame with features expected
-    by the trained model. This raw input will be processed
-    by the model pipeline (no need to encode).
-    """
     import calendar
 
-    # Fallbacks
     municipality = municipality or "Unknown"
     lat_wgs84 = lat_wgs84 or 60.0
     long_wgs84 = long_wgs84 or 15.0
@@ -174,7 +151,6 @@ def build_feature_row(
 # Make prediction and return probability and label
 # ------------------------------------------------------
 
-
 def predict_proba_label(X: pd.DataFrame, model):
     """
     Predict collision probability using the trained model.
@@ -198,7 +174,6 @@ def predict_proba_label(X: pd.DataFrame, model):
             idx = int(np.argmax(proba[0]))
             score = float(proba[0, idx])
             return score, None, dict(enumerate(proba[0]))
-
     else:
         y = model.predict(X)
         label = str(y[0])
