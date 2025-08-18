@@ -13,4 +13,4 @@ requests
 python-dotenv
 pytest
 plotly
-cloudpickle
+cloudpickle>=2.2.0
