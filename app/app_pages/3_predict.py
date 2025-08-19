@@ -32,7 +32,6 @@ def run():
         "and visual feedback.**"
     )
 
-    df = load_clean_data()
     uv = load_unique_values()
     counties = uv["counties"]
     species_list = uv["species"]
@@ -53,6 +52,7 @@ def run():
 
     if st.button("Predict Risk"):
         with st.spinner("Predicting..."):
+            df = load_clean_data()
             try:
                 st.write("🔍 Step 1: Building feature row...")
                 now = datetime.now()
@@ -70,19 +70,14 @@ def run():
                     day_of_year=day_of_year,
                     weekday=weekday,
                 )
-                st.write("✅ Feature row built:", X)
 
                 st.write("🔍 Step 2: Loading model...")
                 model = load_model()
-                model_columns = load_model_columns()  # 👈 hämta förväntade kolumner
+                model_columns = load_model_columns()
                 st.write("✅ Model loaded")
-                st.write("🧪 Model expects these input columns:", model_columns)
-                st.write("🧪 Loaded model columns:", model_columns[:20])
 
                 st.write("🔍 Step 3: Running prediction...")
-                st.write("🧪 Raw input before encoding:", X)
                 score, label, proba, X_encoded = predict_proba_label(X, model)
-                st.write("🧬 Encoded input:", X_encoded)
                 st.success("✅ Prediction complete")
                 st.write(f"📊 Predicted risk score: {score}")
 
