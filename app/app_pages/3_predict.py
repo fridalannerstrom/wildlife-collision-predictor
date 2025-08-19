@@ -12,6 +12,7 @@ from src.predictor import (
     load_model,
     load_model_columns,
 )
+
 from src.data_loader import load_clean_data
 
 
@@ -76,9 +77,12 @@ def run():
                 model_columns = load_model_columns()  # 👈 hämta förväntade kolumner
                 st.write("✅ Model loaded")
                 st.write("🧪 Model expects these input columns:", model_columns)
+                st.write("🧪 Loaded model columns:", model_columns[:20])
 
                 st.write("🔍 Step 3: Running prediction...")
-                score, label, proba = predict_proba_label(X, model)
+                st.write("🧪 Raw input before encoding:", X)
+                score, label, proba, X_encoded = predict_proba_label(X, model)
+                st.write("🧬 Encoded input:", X_encoded)
                 st.success("✅ Prediction complete")
                 st.write(f"📊 Predicted risk score: {score}")
 
@@ -149,7 +153,7 @@ def run():
 
                 with st.expander("View top influential features"):
                     st.write("These are the features that had the highest values in your prediction vector:")
-                    nonzero = X.select_dtypes(include="number").iloc[0]
+                    nonzero = X_encoded.select_dtypes(include="number").iloc[0]
                     nonzero = nonzero[nonzero != 0].sort_values(ascending=False).head(10)
                     st.write(nonzero.to_frame("value"))
 

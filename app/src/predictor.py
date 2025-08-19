@@ -43,6 +43,10 @@ def _download_if_missing(path: str, url: str):
         urlretrieve(url, path)
         print(f"✅ Saved to {path}")
 
+def _one_hot_align(df: pd.DataFrame, model_columns: list[str]) -> pd.DataFrame:
+    df_ohe = pd.get_dummies(df)
+    return df_ohe.reindex(columns=model_columns, fill_value=0)
+
 # ------------------------------------------------------
 # Load model and columns with Streamlit caching
 # ------------------------------------------------------
@@ -150,34 +154,22 @@ def build_feature_row(
 # Make prediction and return probability and label
 # ------------------------------------------------------
 
+
 def predict_proba_label(X_raw: pd.DataFrame, model):
     """
-    Takes raw input, encodes with dummy vars, aligns to model columns, and predicts.
+    Predict using the full pipeline (including transformers).
     """
-    # One-hot encode input
-    X_encoded = pd.get_dummies(X_raw)
-
-    # Load expected column names
-    model_columns = load_model_columns()
-
-    # Align columns
-    for col in model_columns:
-        if col not in X_encoded.columns:
-            X_encoded[col] = 0
-    X_encoded = X_encoded[model_columns]
-
-    # Predict
     if hasattr(model, "predict_proba"):
-        proba = model.predict_proba(X_encoded)
+        proba = model.predict_proba(X_raw)
 
         if proba.shape[1] == 2:
             score = float(proba[0, 1])
-            return score, None, dict(enumerate(proba[0]))
+            return score, None, dict(enumerate(proba[0])), X_raw
         else:
             idx = int(np.argmax(proba[0]))
             score = float(proba[0, idx])
-            return score, None, dict(enumerate(proba[0]))
+            return score, None, dict(enumerate(proba[0])), X_raw
     else:
-        y = model.predict(X_encoded)
+        y = model.predict(X_raw)
         label = str(y[0])
-        return None, label, None
+        return None, label, None, X_raw
