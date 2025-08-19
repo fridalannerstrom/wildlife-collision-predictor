@@ -35,12 +35,14 @@ MODEL_COLUMNS_URL = (
 # Helper: Download model file from GitHub if missing
 # ------------------------------------------------------
 
+
 def _download_if_missing(path: str, url: str):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if not os.path.exists(path):
         print(f"⬇️ Downloading {url} ...")
         urlretrieve(url, path)
         print(f"✅ Saved to {path}")
+
 
 def _one_hot_align(df: pd.DataFrame, model_columns: list[str]) -> pd.DataFrame:
     df_ohe = pd.get_dummies(df)
@@ -49,6 +51,7 @@ def _one_hot_align(df: pd.DataFrame, model_columns: list[str]) -> pd.DataFrame:
 # ------------------------------------------------------
 # Load model and columns with Streamlit caching
 # ------------------------------------------------------
+
 
 @st.cache_resource
 def load_model():
@@ -64,6 +67,7 @@ def load_model():
         st.text(traceback.format_exc())
         raise e
 
+
 @st.cache_resource
 def load_model_columns():
     _download_if_missing(COLUMNS_PATH, MODEL_COLUMNS_URL)
@@ -73,6 +77,7 @@ def load_model_columns():
 # ------------------------------------------------------
 # Load unique values for dropdowns (cached, minimal memory)
 # ------------------------------------------------------
+
 
 @st.cache_resource
 def load_unique_values():
@@ -104,6 +109,7 @@ def load_unique_values():
         "county_to_munis": county_to_munis,
     }
 
+
 def get_municipalities_for_county(county: str) -> list:
     uv = load_unique_values()
     return uv["county_to_munis"].get(county, [])
@@ -111,6 +117,7 @@ def get_municipalities_for_county(county: str) -> list:
 # ------------------------------------------------------
 # Build input row from user selections
 # ------------------------------------------------------
+
 
 def build_feature_row(
     year: int,
@@ -152,6 +159,7 @@ def build_feature_row(
 # ------------------------------------------------------
 # Make prediction and return probability and label
 # ------------------------------------------------------
+
 
 def predict_proba_label(X_raw: pd.DataFrame, model):
     """
