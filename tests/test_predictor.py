@@ -66,6 +66,9 @@ def test_predict_proba_label_output_format():
     Smoke test: The model should return a valid prediction
     in the expected format.
     """
+    from src.predictor import load_model
+    model = load_model()
+
     X = build_feature_row(
         year=2025,
         month=8,
@@ -77,20 +80,15 @@ def test_predict_proba_label_output_format():
         day_of_year=223,
     )
 
-    score, label, proba = predict_proba_label(X)
+    score, label, proba, _ = predict_proba_label(X, model)
 
-    # If the model supports predict_proba, ensure it returns a float
     if score is not None:
         assert isinstance(score, float)
 
-    # If the model uses label prediction, ensure the label is one of the expected classes
     if label is not None:
         assert isinstance(label, str)
-        assert label in [
-            "Very High", "High", "Moderate", "Low", "Very Low"
-        ]
+        assert label in ["Very High", "High", "Moderate", "Low", "Very Low"]
 
-    # If proba is returned, make sure it's a 2D array-like structure
     if proba is not None:
-        assert hasattr(proba, "__getitem__")
-        assert len(proba[0]) >= 1
+        assert isinstance(proba, dict)
+        assert len(proba) >= 1

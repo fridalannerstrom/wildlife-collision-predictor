@@ -217,6 +217,8 @@ All Python files in this project have been linted using **[flake8](https://flake
 - ✅ Import statements have been grouped and broken into readable format.
 - ✅ Inline comments and docstrings follow consistent, clean style.
 
+Some minor linting warnings (such as variables being assigned but not used) are still flagged in auto-analysis tools, but these have been **intentionally left as-is** because they appear in parts of the code where modification would break functionality or cached logic. 
+
 This improves **readability**, **maintainability**, and ensures the codebase follows industry best practices for Python development.
 
 
