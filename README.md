@@ -310,6 +310,36 @@ If I were to continue developing this app, here are some areas I’d prioritize:
 
 ---
 
+## 💡 Credits
+
+| Source              | Contribution                                                                 |
+|---------------------|------------------------------------------------------------------------------|
+| **Code Institute**  | Course structure, guidance, and the Full Stack framework                    |
+| **Django**          | Backend framework used to build the app                                     |
+| **Streamlit**       | Used to build the interactive frontend interface                             |
+| **Scikit-learn**    | For training and evaluating the machine learning model                       |
+| **OpenAI / ChatGPT**| Used extensively for readme, troubleshooting, debugging, and code generation – especially during model deployment and memory optimization |
+| **GitHub**          | Hosting the model files and enabling CI/CD workflows                        |
+| **Heroku**          | Cloud deployment platform used for hosting the app                           |
+| **Python**          | Primary programming language for all logic, modeling, and backend components |
+| **Pandas & NumPy**  | Data manipulation and numeric operations                                     |
+| **Matplotlib & Plotly** | For exploratory visualizations (EDA and map components)               |
+| **Trafikverket**  | Source of the wildlife collision dataset used for training and analysis      |
+
+---
+
+## 🌐 Languages & Tools
+
+- **Languages**: Python, Markdown  
+- **Libraries/Frameworks**: Django, Streamlit, scikit-learn, Pandas, NumPy  
+- **Deployment**: Heroku  
+- **Version Control**: Git, GitHub  
+- **Linting**: flake8  
+- **Formatting**: Black  
+- **Other**: dotenv, joblib, lzma
+
+---
+
 ## Data Notice
 Collision data is provided by Trafikverket/Viltolycksradet and used for non-commercial, educational purposes.
 
