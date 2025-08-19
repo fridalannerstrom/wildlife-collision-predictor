@@ -54,7 +54,6 @@ def run():
         with st.spinner("Predicting..."):
             df = load_clean_data()
             try:
-                st.write("🔍 Step 1: Building feature row...")
                 now = datetime.now()
                 year = now.year
                 day_of_year = now.timetuple().tm_yday
@@ -71,15 +70,10 @@ def run():
                     weekday=weekday,
                 )
 
-                st.write("🔍 Step 2: Loading model...")
                 model = load_model()
                 model_columns = load_model_columns()
-                st.write("✅ Model loaded")
 
-                st.write("🔍 Step 3: Running prediction...")
                 score, label, proba, X_encoded = predict_proba_label(X, model)
-                st.success("✅ Prediction complete")
-                st.write(f"📊 Predicted risk score: {score}")
 
                 adjusted_score = adjust_score(score)
 
