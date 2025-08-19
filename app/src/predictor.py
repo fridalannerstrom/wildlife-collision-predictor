@@ -13,14 +13,13 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from urllib.request import urlretrieve
-from src.data_loader import load_clean_data
 
 # ------------------------------------------------------
 # Paths to model files (local and GitHub fallback)
 # ------------------------------------------------------
 
 MODEL_PATH = os.path.join("model", "model.pkl.xz")
-COLUMNS_PATH = os.path.join("model", "model_columns.pkl") 
+COLUMNS_PATH = os.path.join("model", "model_columns.pkl")
 
 MODEL_URL = (
     "https://github.com/fridalannerstrom/wildlife-collision-predictor/"
@@ -72,24 +71,24 @@ def load_model_columns():
         return joblib.load(f)
 
 # ------------------------------------------------------
-# Load unique values for dropdowns (cached)
+# Load unique values for dropdowns (cached, minimal memory)
 # ------------------------------------------------------
 
 @st.cache_resource
 def load_unique_values():
-    df = load_clean_data()
+    """
+    Efficiently load only County, Municipality, Species from cleaned CSV.
+    """
+    from dotenv import load_dotenv
+    load_dotenv()
+    import os
 
-    if "Time" in df.columns:
-        df["Time"] = pd.to_datetime(df["Time"], errors="coerce")
-        if "Month" not in df.columns:
-            df["Month"] = df["Time"].dt.month
-        if "Year" not in df.columns:
-            df["Year"] = df["Time"].dt.year
+    path = os.getenv("CLEAN_DATA_URL") or "data/cleaned_data.csv"
+    usecols = ["County", "Municipality", "Species"]
+    df = pd.read_csv(path, usecols=usecols)
 
-    required = ["County", "Municipality", "Species"]
-    missing = [c for c in required if c not in df.columns]
-    if missing:
-        raise ValueError(f"Missing columns in cleaned_data.csv: {missing}")
+    df = df.dropna(subset=["County", "Municipality", "Species"])
+    df[usecols] = df[usecols].astype(str).apply(lambda x: x.str.strip())
 
     counties = sorted(df["County"].dropna().unique())
     species = sorted(df["Species"].dropna().unique())
@@ -154,14 +153,12 @@ def build_feature_row(
 # Make prediction and return probability and label
 # ------------------------------------------------------
 
-
 def predict_proba_label(X_raw: pd.DataFrame, model):
     """
     Predict using the full pipeline (including transformers).
     """
     if hasattr(model, "predict_proba"):
         proba = model.predict_proba(X_raw)
-
         if proba.shape[1] == 2:
             score = float(proba[0, 1])
             return score, None, dict(enumerate(proba[0])), X_raw
