@@ -17,16 +17,11 @@ from src.data_loader import load_clean_data
 
 
 def adjust_score(score: float) -> float:
-    """
-    Apply a non-linear adjustment to model score to reduce overconfidence
-    and spread out predicted risk levels more realistically.
-    """
     return score ** 2.5
 
 
 def run():
     st.title("Wildlife Collision Risk Prediction")
-
     st.markdown(
         "**Select a location and time to get predicted collision risk level "
         "and visual feedback.**"
@@ -50,10 +45,12 @@ def run():
 
     species = st.selectbox("Species", ["All species"] + [s for s in species_list if s != "All species"])
 
+    show_map = st.checkbox("Show map", value=False)
+
     if st.button("Predict Risk"):
         with st.spinner("Predicting..."):
-            df = load_clean_data()
             try:
+                df = load_clean_data()
                 now = datetime.now()
                 year = now.year
                 day_of_year = now.timetuple().tm_yday
@@ -72,7 +69,6 @@ def run():
 
                 model = load_model()
                 model_columns = load_model_columns()
-
                 score, label, proba, X_encoded = predict_proba_label(X, model)
 
                 adjusted_score = adjust_score(score)
@@ -101,47 +97,47 @@ def run():
                 }
                 st.info(advice.get(label, "Stay alert and follow local signage."))
 
-                st.subheader("Prediction Location on Map")
-                loc_df = df[(df["County"] == county) & (df["Municipality"] == municipality)].dropna(
-                    subset=["Lat_WGS84", "Long_WGS84"]
-                )
+                if show_map:
+                    st.subheader("Prediction Location on Map")
+                    loc_df = df[(df["County"] == county) & (df["Municipality"] == municipality)].dropna(
+                        subset=["Lat_WGS84", "Long_WGS84"]
+                    )
 
-                if not loc_df.empty:
-                    map_lat = loc_df["Lat_WGS84"].mean()
-                    map_lon = loc_df["Long_WGS84"].mean()
-                else:
-                    map_lat, map_lon = 62.0, 15.0
+                    if not loc_df.empty:
+                        map_lat = loc_df["Lat_WGS84"].mean()
+                        map_lon = loc_df["Long_WGS84"].mean()
+                    else:
+                        map_lat, map_lon = 62.0, 15.0
 
-                fig = go.Figure(go.Scattermapbox(
-                    lat=[map_lat],
-                    lon=[map_lon],
-                    mode='markers',
-                    marker=go.scattermapbox.Marker(
-                        size=18,
-                        color=(
-                            'darkred' if label == "Very High" else
-                            'red' if label == "High" else
-                            'orange' if label == "Moderate" else
-                            'green' if label == "Low" else
-                            'blue'
-                        )
-                    ),
-                    text=f"{label} risk<br>Species: {species}<br>Time: {hour}:00<br>Score: {adjusted_score:.2f}",
-                    hoverinfo='text'
-                ))
+                    fig = go.Figure(go.Scattermapbox(
+                        lat=[map_lat],
+                        lon=[map_lon],
+                        mode='markers',
+                        marker=go.scattermapbox.Marker(
+                            size=18,
+                            color=(
+                                'darkred' if label == "Very High" else
+                                'red' if label == "High" else
+                                'orange' if label == "Moderate" else
+                                'green' if label == "Low" else
+                                'blue'
+                            )
+                        ),
+                        text=f"{label} risk<br>Species: {species}<br>Time: {hour}:00<br>Score: {adjusted_score:.2f}",
+                        hoverinfo='text'
+                    ))
 
-                fig.update_layout(
-                    mapbox_style="open-street-map",
-                    mapbox_zoom=7,
-                    mapbox_center={"lat": map_lat, "lon": map_lon},
-                    margin={"r": 0, "t": 0, "l": 0, "b": 0},
-                    height=500,
-                )
+                    fig.update_layout(
+                        mapbox_style="open-street-map",
+                        mapbox_zoom=7,
+                        mapbox_center={"lat": map_lat, "lon": map_lon},
+                        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+                        height=500,
+                    )
 
-                st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True)
 
                 with st.expander("View top influential features"):
-                    st.write("These are the features that had the highest values in your prediction vector:")
                     nonzero = X_encoded.select_dtypes(include="number").iloc[0]
                     nonzero = nonzero[nonzero != 0].sort_values(ascending=False).head(10)
                     st.write(nonzero.to_frame("value"))
