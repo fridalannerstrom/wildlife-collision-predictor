@@ -246,6 +246,22 @@ Despite being a functional and well-tested app, there are a few known limitation
 
 ---
 
+## Deployment Challenges on Heroku
+
+During deployment to Heroku, I encountered **memory-related issues** when running the prediction feature, especially when trying to load and render a Plotly map after each prediction. The app would sometimes **lose connection to the server** or **crash entirely** due to limited dyno memory (Heroku free and hobby tiers typically offer 512 MB to 1 GB RAM).
+
+To mitigate this:
+
+- I **optimized the code** by removing unnecessary operations and caching both the model and dataset loading using `@st.cache_resource` and `@st.cache_data`.
+- I refactored the predictor to **only load the cleaned dataset when absolutely necessary**, reducing memory overhead.
+- I also **removed the interactive map from the prediction page**, as this component caused the largest memory spikes.
+
+Although the map is still available in the Exploratory Data Analysis (EDA) section, I decided to disable it during live prediction to ensure stability on Heroku.
+
+> ✅ For the best experience, especially when using the full model and map visualizations, I recommend downloading and running the project **locally**. This avoids the memory limitations of free-tier cloud platforms and ensures full feature access without performance issues.
+
+---
+
 ## Learnings & Reflections
 - Streamlit made rapid UI prototyping easy and powerful
 - GitHub Releases is a smart workaround for model file hosting
