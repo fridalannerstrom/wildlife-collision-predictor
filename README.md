@@ -1,5 +1,10 @@
 # 🦌🚗 Wildlife Collision Predictor
-
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.5-F7931E?logo=scikitlearn)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.33-FF4B4B?logo=streamlit)
+![Machine Learning](https://img.shields.io/badge/ML-Pipeline-9C27B0)
+![Data Visualization](https://img.shields.io/badge/Data-Visualization-03A9F4)
+![Explainable AI](https://img.shields.io/badge/Explainable-AI-4CAF50)
 
 ## Overview
 This Streamlit-powered machine learning app predicts **wildlife collision risk** on Swedish roads based on:
